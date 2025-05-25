@@ -18,6 +18,8 @@ Turing complete thanks to arithmetic, memory access and branching opcodes.
 | `JZ o`      | Jump if zero              |
 | `JNZ o`     | Jump if non‑zero          |
 | `PRINT`     | Pop value and output      |
+| `BLOCK n`   | Run next `n` chunks in new VM |
+| `NTT n`     | NTT roundtrip next `n` chunks |
 
 Negative jump offsets are encoded using a special `NEG_FLAG` prime.  Memory is
 an unbounded dictionary of integer addresses.
@@ -29,11 +31,18 @@ an unbounded dictionary of integer addresses.
 ```bash
 python3 uor-cli.py assemble program.asm   # assemble to chunks
 python3 uor-cli.py run program.asm        # assemble and execute
+python3 uor-cli.py run program.uor        # run pre-encoded program
 ```
 
 Assembly files consist of one instruction per line with optional labels and
 `#` comments.  Offsets for jumps can reference labels and will be translated to
 relative jumps automatically.
+
+## Examples
+
+Two sample programs are provided in the `examples/` directory.  `countdown.asm`
+implements a simple loop that prints `321`.  `block_demo.asm` demonstrates the
+`BLOCK` opcode by executing a small block which prints `HI`.
 
 ## Tests
 

@@ -66,6 +66,14 @@ def assemble(text: str) -> List[int]:
             if arg is None:
                 raise ValueError("JNZ requires offset")
             result.append(chunks.chunk_jnz(int(arg)))
+        elif op == "BLOCK":
+            if arg is None:
+                raise ValueError("BLOCK requires length")
+            result.append(chunks.chunk_block_start(int(arg)))
+        elif op == "NTT":
+            if arg is None:
+                raise ValueError("NTT requires length")
+            result.append(chunks.chunk_ntt(int(arg)))
         else:
             raise ValueError(f"Unknown instruction: {op}")
 

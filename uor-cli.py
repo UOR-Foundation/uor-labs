@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Command line interface for the Pure UOR VM."""
+"""Command line interface for the Pure UOR VM.
+
+The tool can assemble text programs into numeric chunks or execute an
+assembly file directly.  If a ``.uor`` file is given, its numbers are
+loaded and executed through the VM.
+"""
 from __future__ import annotations
 
 import argparse
@@ -38,7 +43,7 @@ def build_parser() -> argparse.ArgumentParser:
     pa.set_defaults(func=cmd_assemble)
 
     pr = sub.add_parser('run', help='assemble and run program')
-    pr.add_argument('source')
+    pr.add_argument('source', help='source .asm or encoded .uor file')
     pr.set_defaults(func=cmd_run)
 
     return p
