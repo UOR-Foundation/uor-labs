@@ -52,6 +52,7 @@ def get_prime(idx: int) -> int:
 def factor(x: int) -> List[Tuple[int, int]]:
     if x in _FACTOR_CACHE:
         return list(_FACTOR_CACHE[x])
+    orig = x
     fac: List[Tuple[int, int]] = []
     i = 0
     while True:
@@ -70,5 +71,5 @@ def factor(x: int) -> List[Tuple[int, int]]:
             _PRIME_IDX[x] = len(_PRIMES)
             _PRIMES.append(x)
         fac.append((x, 1))
-    _FACTOR_CACHE[x] = list(fac)
+    _FACTOR_CACHE[orig] = list(fac)
     return fac
