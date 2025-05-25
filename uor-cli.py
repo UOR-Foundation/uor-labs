@@ -11,6 +11,7 @@ import argparse
 import sys
 
 from vm import VM
+from decoder import decode
 import chunks
 import assembler
 
@@ -45,7 +46,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     else:
         chunks_list = assembler.assemble_file(args.source)
     vm = VM()
-    output = ''.join(vm.execute(chunks_list))
+    output = ''.join(vm.execute(decode(chunks_list)))
     print(output)
     return 0
 

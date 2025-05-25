@@ -2,6 +2,7 @@ import unittest
 
 import chunks
 from vm import VM
+from decoder import decode
 
 
 class VMTest(unittest.TestCase):
@@ -12,7 +13,7 @@ class VMTest(unittest.TestCase):
             chunks.chunk_add(),
             chunks.chunk_print(),
         ]
-        out = ''.join(VM().execute(prog))
+        out = ''.join(VM().execute(decode(prog)))
         self.assertEqual(out, '5')
 
     def test_memory(self):
@@ -22,7 +23,7 @@ class VMTest(unittest.TestCase):
             chunks.chunk_load(0),
             chunks.chunk_print(),
         ]
-        out = ''.join(VM().execute(prog))
+        out = ''.join(VM().execute(decode(prog)))
         self.assertEqual(out, '7')
 
 

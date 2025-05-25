@@ -1,6 +1,7 @@
 import unittest
 import assembler
 from vm import VM
+from decoder import decode
 
 class BlockOpcodeTest(unittest.TestCase):
     def test_block_executes_sub_vm(self):
@@ -12,7 +13,7 @@ class BlockOpcodeTest(unittest.TestCase):
         PRINT
         """
         prog = assembler.assemble(src)
-        out = ''.join(VM().execute(prog))
+        out = ''.join(VM().execute(decode(prog)))
         self.assertEqual(out, '3')
 
 if __name__ == '__main__':

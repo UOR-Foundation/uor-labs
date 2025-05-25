@@ -3,7 +3,9 @@ from __future__ import annotations
 
 from typing import List, Dict, Iterator, Tuple
 
-from primes import get_prime, _PRIME_IDX, factor
+from decoder import DecodedInstruction
+
+from primes import _PRIME_IDX
 from chunks import (
     OP_PUSH, OP_ADD, OP_PRINT,
     OP_SUB, OP_MUL,
@@ -33,57 +35,20 @@ class VM:
             OP_PRINT: self._op_print,
         }
 
-    def execute(self, chunks: List[int]) -> Iterator[str]:
+    def execute(self, program: List[DecodedInstruction]) -> Iterator[str]:
         self.ip = 0
-        while self.ip < len(chunks):
-            ck = chunks[self.ip]
+        while self.ip < len(program):
+            instr = program[self.ip]
             self.ip += 1
-            fac = factor(ck)
-            chk = None
-            data: List[Tuple[int, int]] = []
-            for p, e in fac:
-                if e >= 6 and chk is None:
-                    chk = p
-                    e -= 6
-                elif e >= 6:
-                    if p == BLOCK_TAG and e == 7:
-                        pass
-                    else:
-                        raise ValueError("Duplicate checksum")
-                if e:
-                    data.append((p, e))
-            if chk is None:
-                raise ValueError("Checksum missing")
-            xor = 0
-            for p, e in data:
-                xor ^= _PRIME_IDX[p] * e
-            if chk != get_prime(xor):
-                raise ValueError("Checksum mismatch")
+            data = instr.data
 
             if any(p == BLOCK_TAG and e == 7 for p, e in data):
-                lp = next(p for p, e in data if p != BLOCK_TAG and e == 5)
-                cnt = _PRIME_IDX[lp]
-                inner = chunks[self.ip:self.ip + cnt]
-                self.ip += cnt
-                yield from VM().execute(inner)
+                yield from VM().execute(instr.inner or [])
                 continue
 
             if any(p == NTT_TAG and e == 4 for p, e in data):
-                lp = next(p for p, e in data if p != NTT_TAG and e == 5)
-                cnt = _PRIME_IDX[lp]
-                inner = chunks[self.ip:self.ip + cnt]
-                self.ip += cnt
-                vec = []
-                for c in inner:
-                    f = factor(c)
-                    sub = []
-                    cchk = None
-                    for p2, e2 in f:
-                        if e2 >= 6 and cchk is None:
-                            e2 -= 6
-                            cchk = p2
-                        sub.append((p2, e2))
-                    vec.append(next((e2 for _, e2 in sub if e2 > 0), 0))
+                inner = instr.inner or []
+                vec = [next((e2 for _, e2 in i.data if e2 > 0), 0) for i in inner]
                 n = len(vec)
                 if n:
                     root = pow(NTT_ROOT, (T_MOD - 1) // n, T_MOD)
