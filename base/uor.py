@@ -9,6 +9,18 @@ from . import primes
 from . import chunks
 from .vm import VM
 
+# Opcode aliases for backwards compatibility
+OP_PUSH = chunks.OP_PUSH
+OP_ADD = chunks.OP_ADD
+OP_SUB = chunks.OP_SUB
+OP_MUL = chunks.OP_MUL
+OP_PRINT = chunks.OP_PRINT
+OP_LOAD = chunks.OP_LOAD
+OP_STORE = chunks.OP_STORE
+OP_JMP = chunks.OP_JMP
+OP_JZ = chunks.OP_JZ
+OP_JNZ = chunks.OP_JNZ
+
 # Re-export for compatibility
 get_prime = primes.get_prime
 chunk_data = chunks.chunk_data
@@ -24,6 +36,11 @@ chunk_jz = chunks.chunk_jz
 chunk_jnz = chunks.chunk_jnz
 chunk_block_start = chunks.chunk_block_start
 chunk_ntt = chunks.chunk_ntt
+
+
+def vm_execute(prog: List[int]):
+    """Execute program using the built-in VM."""
+    return VM().execute(prog)
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -55,6 +72,21 @@ def _self_tests() -> Tuple[int, int]:
         chunk_print(),
     ]
     ok("".join(VM().execute(prog_mem)) == "10", "memory")
+
+    prog_loop = [
+        chunk_push(3),
+        chunk_store(0),
+        chunk_load(0),
+        chunk_jz(7),
+        chunk_load(0),
+        chunk_print(),
+        chunk_load(0),
+        chunk_push(1),
+        chunk_sub(),
+        chunk_store(0),
+        chunk_jmp(-9),
+    ]
+    ok("".join(VM().execute(prog_loop)) == "321", "loop")
 
     return passed, failed
 
