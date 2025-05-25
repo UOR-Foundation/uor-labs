@@ -26,7 +26,7 @@ an unbounded dictionary of integer addresses.
 
 ## Assembler and CLI
 
-`uor-cli.py` offers two commands:
+`uor-cli.py` offers several commands:
 
 ```bash
 python3 uor-cli.py assemble program.asm            # assemble to chunks
@@ -35,6 +35,9 @@ python3 uor-cli.py assemble < foo.asm              # read source from stdin
 python3 uor-cli.py run program.asm                 # assemble and execute
 python3 uor-cli.py run program.uor                 # run pre-encoded program
 python3 uor-cli.py run < program.asm               # assemble from stdin and run
+python3 uor-cli.py ipfs-add program.asm            # store encoded program via IPFS
+python3 uor-cli.py ipfs-run QmCID                  # run program fetched from IPFS
+python3 uor-cli.py generate --provider openai "your prompt"  # create program with an LLM
 ```
 
 Assembly files consist of one instruction per line with optional labels and
@@ -65,5 +68,16 @@ dependency and have an IPFS daemon running locally:
 ```bash
 pip install -r requirements.txt
 ipfs daemon &
+```
+
+## LLM API Keys
+
+The upcoming LLM helpers require API credentials. Set the following environment
+variables for the providers you want to use:
+
+```bash
+export OPENAI_API_KEY=your-openai-key
+export ANTHROPIC_API_KEY=your-anthropic-key
+export GOOGLE_API_KEY=your-gemini-key
 ```
 
