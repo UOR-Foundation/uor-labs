@@ -84,7 +84,31 @@ class VM:
                             cchk = p2
                         sub.append((p2, e2))
                     vec.append(next((e2 for _, e2 in sub if e2 > 0), 0))
-                _ = vec  # placeholder for NTT roundtrip
+                n = len(vec)
+                if n:
+                    root = pow(NTT_ROOT, (T_MOD - 1) // n, T_MOD)
+
+                    def _ntt(values: List[int]) -> List[int]:
+                        res = []
+                        for i in range(n):
+                            acc = 0
+                            for j, v in enumerate(values):
+                                acc = (acc + v * pow(root, (i * j) % n, T_MOD)) % T_MOD
+                            res.append(acc)
+                        return res
+
+                    def _intt(values: List[int]) -> List[int]:
+                        inv_root = pow(root, T_MOD - 2, T_MOD)
+                        inv_n = pow(n, T_MOD - 2, T_MOD)
+                        res = []
+                        for i in range(n):
+                            acc = 0
+                            for j, v in enumerate(values):
+                                acc = (acc + v * pow(inv_root, (i * j) % n, T_MOD)) % T_MOD
+                            res.append((acc * inv_n) % T_MOD)
+                        return res
+
+                    vec = _intt(_ntt(vec))
                 yield from VM().execute(inner)
                 continue
 
