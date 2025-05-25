@@ -95,3 +95,20 @@ python3 uor-cli.py factory "your goal"            # uses OpenAI by default
 ```
 
 Pass `--provider` to select another LLM backend.
+
+## API Server
+
+A small Flask server exposes HTTP endpoints for assembling, running and generating programs.
+Start it with:
+
+```bash
+python3 server.py
+```
+
+Available routes:
+
+- `POST /assemble` – body `{ "text": "..." }` returns `{"chunks": [...]}`
+- `POST /run` – body with `"text"` or `"chunks"` executes the program and returns `{"output": "..."}`
+- `POST /generate` – body `{ "prompt": "...", "provider": "openai" }` calls the selected LLM, assembles the result, stores it via IPFS and returns `{"cid": "..."}`.
+
+The server relies on the same environment variables as `llm_client` for API keys.
