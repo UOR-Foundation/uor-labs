@@ -4,6 +4,16 @@ This repository implements a modular "Pure UOR" virtual machine.  Programs are
 encoded as products of prime powers with checksums for integrity.  The VM is
 Turing complete thanks to arithmetic, memory access and branching opcodes.
 
+## Installation
+
+Install the package via `pip` to get the `uor-cli` command:
+
+```bash
+pip install uor-labs
+```
+
+You can then run `uor-cli` from anywhere.
+
 ## Instruction Set
 
 | Instruction | Description               |
@@ -26,18 +36,18 @@ an unbounded dictionary of integer addresses.
 
 ## Assembler and CLI
 
-`uor-cli.py` offers several commands:
+`uor-cli` offers several commands:
 
 ```bash
-python3 uor-cli.py assemble program.asm            # assemble to chunks
-python3 uor-cli.py assemble -o program.uor foo.asm # write chunks to file
-python3 uor-cli.py assemble < foo.asm              # read source from stdin
-python3 uor-cli.py run program.asm                 # assemble and execute
-python3 uor-cli.py run program.uor                 # run pre-encoded program
-python3 uor-cli.py run < program.asm               # assemble from stdin and run
-python3 uor-cli.py ipfs-add program.asm            # store encoded program via IPFS
-python3 uor-cli.py ipfs-run QmCID                  # run program fetched from IPFS
-python3 uor-cli.py generate --provider openai "your prompt"  # create program with an LLM
+uor-cli assemble program.asm            # assemble to chunks
+uor-cli assemble -o program.uor foo.asm # write chunks to file
+uor-cli assemble < foo.asm              # read source from stdin
+uor-cli run program.asm                 # assemble and execute
+uor-cli run program.uor                 # run pre-encoded program
+uor-cli run < program.asm               # assemble from stdin and run
+uor-cli ipfs-add program.asm            # store encoded program via IPFS
+uor-cli ipfs-run QmCID                  # run program fetched from IPFS
+uor-cli generate --provider openai "your prompt"  # create program with an LLM
 ```
 
 Assembly files consist of one instruction per line with optional labels and
@@ -91,7 +101,7 @@ Use `uor.async_llm_client.async_call_model` when coordinating multiple agents co
 Specialized agents (planner, coder and tester) live under `uor.agents`. The `AppFactory` orchestrates them to create new apps and store the result via IPFS. Run this process through the CLI:
 
 ```bash
-python3 uor-cli.py factory "your goal"            # uses OpenAI by default
+uor-cli factory "your goal"            # uses OpenAI by default
 ```
 
 Pass `--provider` to select another LLM backend.
