@@ -16,14 +16,30 @@ import assembler
 
 
 def cmd_assemble(args: argparse.Namespace) -> int:
-    program = assembler.assemble_file(args.source)
-    for ck in program:
-        print(ck)
+    """Assemble a program and optionally write the chunks to a file."""
+    if args.source:
+        with open(args.source, "r", encoding="utf-8") as fh:
+            text = fh.read()
+    else:
+        text = sys.stdin.read()
+
+    program = assembler.assemble(text)
+
+    if args.output:
+        with open(args.output, "w", encoding="utf-8") as out:
+            out.write("\n".join(str(ck) for ck in program) + "\n")
+    else:
+        for ck in program:
+            print(ck)
     return 0
 
 
 def cmd_run(args: argparse.Namespace) -> int:
-    if args.source.endswith('.uor'):
+    """Run a program, assembling it first if needed."""
+    if args.source is None:
+        text = sys.stdin.read()
+        chunks_list = assembler.assemble(text)
+    elif args.source.endswith('.uor'):
         with open(args.source, 'r', encoding='utf-8') as fh:
             chunks_list = [int(x) for x in fh.read().split() if x]
     else:
@@ -39,11 +55,12 @@ def build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest='cmd', required=True)
 
     pa = sub.add_parser('assemble', help='assemble program')
-    pa.add_argument('source')
+    pa.add_argument('source', nargs='?', help='assembly file, defaults to stdin')
+    pa.add_argument('-o', '--output', help='write encoded program to file')
     pa.set_defaults(func=cmd_assemble)
 
     pr = sub.add_parser('run', help='assemble and run program')
-    pr.add_argument('source', help='source .asm or encoded .uor file')
+    pr.add_argument('source', nargs='?', help='source .asm or encoded .uor file; reads assembly from stdin if omitted')
     pr.set_defaults(func=cmd_run)
 
     return p
