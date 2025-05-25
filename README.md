@@ -29,9 +29,12 @@ an unbounded dictionary of integer addresses.
 `uor-cli.py` offers two commands:
 
 ```bash
-python3 uor-cli.py assemble program.asm   # assemble to chunks
-python3 uor-cli.py run program.asm        # assemble and execute
-python3 uor-cli.py run program.uor        # run pre-encoded program
+python3 uor-cli.py assemble program.asm            # assemble to chunks
+python3 uor-cli.py assemble -o program.uor foo.asm # write chunks to file
+python3 uor-cli.py assemble < foo.asm              # read source from stdin
+python3 uor-cli.py run program.asm                 # assemble and execute
+python3 uor-cli.py run program.uor                 # run pre-encoded program
+python3 uor-cli.py run < program.asm               # assemble from stdin and run
 ```
 
 Assembly files consist of one instruction per line with optional labels and
