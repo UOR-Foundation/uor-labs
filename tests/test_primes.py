@@ -37,6 +37,23 @@ class FactorRegressionTest(unittest.TestCase):
         self.assertIn(12, _FACTOR_CACHE)
         self.assertEqual(_FACTOR_CACHE[12], result)
 
+    def test_factor_cache_returns_copy(self):
+        _FACTOR_CACHE.clear()
+        result1 = factor(12)
+        result1.append((5, 1))
+        self.assertIn(12, _FACTOR_CACHE)
+        self.assertEqual(_FACTOR_CACHE[12], [(2, 2), (3, 1)])
+        result2 = factor(12)
+        self.assertEqual(result2, [(2, 2), (3, 1)])
+        self.assertIsNot(result2, _FACTOR_CACHE[12])
+
+    def test_factor_cache_reused(self):
+        _FACTOR_CACHE.clear()
+        factor(18)
+        cache_snapshot = dict(_FACTOR_CACHE)
+        factor(18)
+        self.assertEqual(_FACTOR_CACHE, cache_snapshot)
+
 
 if __name__ == "__main__":
     unittest.main()
