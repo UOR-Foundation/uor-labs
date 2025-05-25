@@ -1,8 +1,8 @@
 import unittest
 
 import assembler
-from base import chunks
-from base.vm import VM
+import chunks
+from vm import VM
 
 
 class AssemblerTest(unittest.TestCase):
