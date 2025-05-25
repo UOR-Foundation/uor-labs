@@ -1,1 +1,5 @@
 ipfshttpclient~=0.8
+openai
+anthropic
+google-generativeai
+flask

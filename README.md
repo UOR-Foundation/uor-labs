@@ -67,3 +67,14 @@ pip install -r requirements.txt
 ipfs daemon &
 ```
 
+## LLM API Keys
+
+The upcoming LLM helpers require API credentials. Set the following environment
+variables for the providers you want to use:
+
+```bash
+export OPENAI_API_KEY=your-openai-key
+export ANTHROPIC_API_KEY=your-anthropic-key
+export GOOGLE_API_KEY=your-gemini-key
+```
+
