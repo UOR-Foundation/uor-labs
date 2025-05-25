@@ -55,3 +55,15 @@ Unit tests reside in `tests/`.  Run them with:
 python3 -m unittest discover -v
 ```
 
+
+## Optional IPFS Support
+
+The module `uor.ipfs_storage` provides helpers for storing and retrieving
+programs via [IPFS](https://ipfs.tech/). To use it you must install the optional
+dependency and have an IPFS daemon running locally:
+
+```bash
+pip install -r requirements.txt
+ipfs daemon &
+```
+
