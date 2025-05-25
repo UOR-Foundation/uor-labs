@@ -88,6 +88,15 @@ def _self_tests() -> Tuple[int, int]:
     ]
     ok("".join(VM().execute(prog_loop)) == "321", "loop")
 
+    # Stress-test prime factorization with large numbers
+    large = primes.get_prime(1000) * primes.get_prime(1100)
+    fac = primes.factor(large)
+    prod = 1
+    for p_, e_ in fac:
+        prod *= p_ ** e_
+    ok(prod == large, "factor large")
+    ok(primes.factor(large) == fac, "factor cache")
+
     return passed, failed
 
 
