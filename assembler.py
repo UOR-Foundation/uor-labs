@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Dict, List, Tuple
 
-from base import chunks
+import chunks
 
 
 def assemble(text: str) -> List[int]:

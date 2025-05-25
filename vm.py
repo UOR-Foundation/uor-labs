@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from typing import List, Dict, Iterator, Tuple
 
-from .primes import get_prime, _PRIME_IDX, factor
-from .chunks import (
+from primes import get_prime, _PRIME_IDX, factor
+from chunks import (
     OP_PUSH, OP_ADD, OP_PRINT,
     OP_SUB, OP_MUL,
     OP_LOAD, OP_STORE,

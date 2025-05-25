@@ -1,7 +1,7 @@
 import time
 import unittest
 
-from base.primes import get_prime
+from primes import get_prime
 
 
 def naive_get_prime(idx: int) -> int:

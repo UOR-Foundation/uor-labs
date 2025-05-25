@@ -5,8 +5,8 @@ from __future__ import annotations
 import argparse
 import sys
 
-from base.vm import VM
-from base import chunks
+from vm import VM
+import chunks
 import assembler
 
 

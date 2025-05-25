@@ -1,7 +1,7 @@
 import unittest
 
-from base import chunks
-from base.vm import VM
+import chunks
+from vm import VM
 
 
 class VMTest(unittest.TestCase):

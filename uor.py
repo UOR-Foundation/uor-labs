@@ -5,9 +5,9 @@ from __future__ import annotations
 import sys
 from typing import List, Tuple
 
-from . import primes
-from . import chunks
-from .vm import VM
+import primes
+import chunks
+from vm import VM
 
 # Opcode aliases for backwards compatibility
 OP_PUSH = chunks.OP_PUSH

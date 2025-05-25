@@ -3,11 +3,11 @@ from __future__ import annotations
 
 from typing import List, Tuple
 
-from .primes import get_prime, _PRIME_IDX
+from primes import get_prime, _PRIME_IDX
 
 # Opcode prime indices
-from .primes import _PRIMES
-from .primes import _extend_primes_to
+from primes import _PRIMES
+from primes import _extend_primes_to
 
 _extend_primes_to(13)
 OP_PUSH, OP_ADD, OP_PRINT = _PRIMES[0], _PRIMES[1], _PRIMES[2]
