@@ -67,3 +67,29 @@ pip install -r requirements.txt
 ipfs daemon &
 ```
 
+## LLM API Keys
+
+The upcoming LLM helpers require API credentials. Set the following environment
+variables for the providers you want to use:
+
+```bash
+export OPENAI_API_KEY=your-openai-key
+export ANTHROPIC_API_KEY=your-anthropic-key
+export GOOGLE_API_KEY=your-gemini-key
+```
+
+## HTTP API Server
+
+Run a small Flask app that exposes endpoints for front-end integrations:
+
+```bash
+python3 run_server.py
+```
+
+Available endpoints:
+
+- `POST /generate` – JSON body `{"provider": "openai", "prompt": "..."}`
+  assembles the LLM response, stores it to IPFS and returns `{"cid": "..."}`.
+- `GET /run/<cid>` – executes an encoded program stored under the given CID
+  and returns its output as JSON.
+
