@@ -1,7 +1,7 @@
 import time
 import unittest
 
-from primes import get_prime
+from primes import get_prime, factor, _FACTOR_CACHE
 
 
 def naive_get_prime(idx: int) -> int:
@@ -27,6 +27,15 @@ class PrimeBenchTest(unittest.TestCase):
         get_prime(idx)
         sieve_time = time.time() - start
         self.assertLess(sieve_time, naive_time)
+
+
+class FactorRegressionTest(unittest.TestCase):
+    def test_factor_cache_original_input(self):
+        _FACTOR_CACHE.clear()
+        result = factor(12)
+        self.assertEqual(result, [(2, 2), (3, 1)])
+        self.assertIn(12, _FACTOR_CACHE)
+        self.assertEqual(_FACTOR_CACHE[12], result)
 
 
 if __name__ == "__main__":
