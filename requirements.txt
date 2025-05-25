@@ -1,0 +1,1 @@
+ipfshttpclient~=0.8
