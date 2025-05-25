@@ -8,9 +8,12 @@ loaded and executed through the VM.
 from __future__ import annotations
 
 import argparse
+import asyncio
+import inspect
 import sys
 
 from uor import ipfs_storage, llm_client
+from uor.agents.factory import AppFactory
 
 from vm import VM
 from decoder import decode
@@ -90,6 +93,14 @@ def cmd_generate(args: argparse.Namespace) -> int:
     return 0
 
 
+async def cmd_factory(args: argparse.Namespace) -> int:
+    """Build an app via specialized agents and store it in IPFS."""
+    factory = AppFactory(provider=args.provider)
+    cid = await factory.build_app(args.goal)
+    print(cid)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Pure UOR VM utilities")
     sub = p.add_subparsers(dest='cmd', required=True)
@@ -118,13 +129,23 @@ def build_parser() -> argparse.ArgumentParser:
     pg.add_argument('prompt', help='prompt describing the program')
     pg.set_defaults(func=cmd_generate)
 
+    pf = sub.add_parser('factory', help='build app using specialized agents')
+    pf.add_argument('--provider', default='openai',
+                    choices=['openai', 'anthropic', 'gemini'],
+                    help='LLM provider to use')
+    pf.add_argument('goal', help='high level goal for the app')
+    pf.set_defaults(func=cmd_factory)
+
     return p
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    return args.func(args)
+    result = args.func(args)
+    if inspect.iscoroutine(result):
+        return asyncio.run(result)
+    return result
 
 
 if __name__ == '__main__':
