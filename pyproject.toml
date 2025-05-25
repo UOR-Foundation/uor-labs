@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "uor-labs"
+version = "0.1.0"
+description = "Pure UOR virtual machine and utilities"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [{name = "UOR Foundation"}]
+requires-python = ">=3.11"
+dependencies = [
+    "ipfshttpclient~=0.8",
+    "openai",
+    "anthropic",
+    "google-generativeai",
+    "flask",
+]
+
+[project.scripts]
+uor-cli = "uor_cli:main"
+
+[tool.setuptools]
+packages = ["uor"]
+py-modules = ["assembler", "chunks", "decoder", "primes", "server", "uor", "vm", "uor_cli"]
