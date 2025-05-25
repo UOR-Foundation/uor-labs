@@ -8,6 +8,7 @@ from typing import List, Tuple
 import primes
 import chunks
 from vm import VM
+from decoder import decode
 
 # Opcode aliases for backwards compatibility
 OP_PUSH = chunks.OP_PUSH
@@ -40,7 +41,7 @@ chunk_ntt = chunks.chunk_ntt
 
 def vm_execute(prog: List[int]):
     """Execute program using the built-in VM."""
-    return VM().execute(prog)
+    return VM().execute(decode(prog))
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -60,10 +61,10 @@ def _self_tests() -> Tuple[int, int]:
             print("FAIL", msg)
 
     ok((chunks.OP_PUSH, chunks.OP_ADD, chunks.OP_PRINT) == (2, 3, 5), "primes")
-    ok("".join(vm.execute([chunk_data(i, ord(c)) for i, c in enumerate("Hi")])) == "Hi", "roundtrip")
+    ok("".join(vm.execute(decode([chunk_data(i, ord(c)) for i, c in enumerate("Hi")]))) == "Hi", "roundtrip")
     seq = [chunk_data(i, ord(c)) for i, c in enumerate("XYZ")]
     prog = [chunk_ntt(3)] + seq
-    ok("".join(VM().execute(prog)) == "XYZ", "ntt roundtrip")
+    ok("".join(VM().execute(decode(prog))) == "XYZ", "ntt roundtrip")
 
     prog_mem = [
         chunk_push(10),
@@ -71,7 +72,7 @@ def _self_tests() -> Tuple[int, int]:
         chunk_load(0),
         chunk_print(),
     ]
-    ok("".join(VM().execute(prog_mem)) == "10", "memory")
+    ok("".join(VM().execute(decode(prog_mem))) == "10", "memory")
 
     prog_loop = [
         chunk_push(3),
@@ -86,7 +87,7 @@ def _self_tests() -> Tuple[int, int]:
         chunk_store(0),
         chunk_jmp(-9),
     ]
-    ok("".join(VM().execute(prog_loop)) == "321", "loop")
+    ok("".join(VM().execute(decode(prog_loop))) == "321", "loop")
 
     # Stress-test prime factorization with large numbers
     large = primes.get_prime(1000) * primes.get_prime(1100)
@@ -112,4 +113,4 @@ if __name__ == "__main__":
     print("\nDemo ▶ Encoding chunks:")
     print(" ".join(str(x) for x in stream))
     print("Demo ▶ Decoded text:")
-    print("".join(vm.execute(stream)))
+    print("".join(vm.execute(decode(stream))))

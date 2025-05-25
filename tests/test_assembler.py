@@ -3,6 +3,7 @@ import unittest
 import assembler
 import chunks
 from vm import VM
+from decoder import decode
 
 
 class AssemblerTest(unittest.TestCase):
@@ -23,7 +24,7 @@ class AssemblerTest(unittest.TestCase):
         end:
         """
         prog = assembler.assemble(src)
-        out = ''.join(VM().execute(prog))
+        out = ''.join(VM().execute(decode(prog)))
         self.assertEqual(out, '321')
 
     def test_numeric_negative_jump(self):
@@ -40,7 +41,7 @@ class AssemblerTest(unittest.TestCase):
         JNZ -8
         """
         prog = assembler.assemble(src)
-        out = ''.join(VM().execute(prog))
+        out = ''.join(VM().execute(decode(prog)))
         self.assertEqual(out, '321')
 
     def test_label_resolution_forward(self):
@@ -52,7 +53,7 @@ class AssemblerTest(unittest.TestCase):
         PRINT
         """
         prog = assembler.assemble(src)
-        out = ''.join(VM().execute(prog))
+        out = ''.join(VM().execute(decode(prog)))
         self.assertEqual(out, '2')
 
     def test_unknown_label_error(self):
