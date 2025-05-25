@@ -10,7 +10,7 @@ from __future__ import annotations
 import argparse
 import sys
 
-from uor import ipfs_storage
+from uor import ipfs_storage, llm_client
 
 from vm import VM
 from decoder import decode
@@ -80,6 +80,16 @@ def cmd_ipfs_run(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_generate(args: argparse.Namespace) -> int:
+    """Generate a program via an LLM and store it in IPFS."""
+    asm = llm_client.call_model(args.provider, args.prompt)
+    chunks_list = assembler.assemble(asm)
+    data = '\n'.join(str(x) for x in chunks_list).encode('utf-8')
+    cid = ipfs_storage.add_data(data)
+    print(cid)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Pure UOR VM utilities")
     sub = p.add_subparsers(dest='cmd', required=True)
@@ -100,6 +110,13 @@ def build_parser() -> argparse.ArgumentParser:
     px = sub.add_parser('ipfs-run', help='run program from IPFS CID')
     px.add_argument('cid', help='content identifier to fetch')
     px.set_defaults(func=cmd_ipfs_run)
+
+    pg = sub.add_parser('generate', help='generate program via an LLM')
+    pg.add_argument('--provider', default='openai',
+                    choices=['openai', 'anthropic', 'gemini'],
+                    help='LLM provider to use')
+    pg.add_argument('prompt', help='prompt describing the program')
+    pg.set_defaults(func=cmd_generate)
 
     return p
 

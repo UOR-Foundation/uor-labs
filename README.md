@@ -26,7 +26,7 @@ an unbounded dictionary of integer addresses.
 
 ## Assembler and CLI
 
-`uor-cli.py` offers two commands:
+`uor-cli.py` offers several commands:
 
 ```bash
 python3 uor-cli.py assemble program.asm            # assemble to chunks
@@ -35,6 +35,9 @@ python3 uor-cli.py assemble < foo.asm              # read source from stdin
 python3 uor-cli.py run program.asm                 # assemble and execute
 python3 uor-cli.py run program.uor                 # run pre-encoded program
 python3 uor-cli.py run < program.asm               # assemble from stdin and run
+python3 uor-cli.py ipfs-add program.asm            # store encoded program via IPFS
+python3 uor-cli.py ipfs-run QmCID                  # run program fetched from IPFS
+python3 uor-cli.py generate --provider openai "your prompt"  # create program with an LLM
 ```
 
 Assembly files consist of one instruction per line with optional labels and
