@@ -10,6 +10,8 @@ from __future__ import annotations
 import argparse
 import sys
 
+from uor import ipfs_storage
+
 from vm import VM
 from decoder import decode
 import chunks
@@ -51,6 +53,33 @@ def cmd_run(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_ipfs_add(args: argparse.Namespace) -> int:
+    """Assemble ``source`` and store the encoded program via IPFS."""
+    if args.source:
+        if args.source.endswith('.uor'):
+            with open(args.source, 'r', encoding='utf-8') as fh:
+                chunks_list = [int(x) for x in fh.read().split() if x]
+        else:
+            chunks_list = assembler.assemble_file(args.source)
+    else:
+        text = sys.stdin.read()
+        chunks_list = assembler.assemble(text)
+    data = '\n'.join(str(x) for x in chunks_list).encode('utf-8')
+    cid = ipfs_storage.add_data(data)
+    print(cid)
+    return 0
+
+
+def cmd_ipfs_run(args: argparse.Namespace) -> int:
+    """Fetch a program by CID from IPFS and execute it."""
+    raw = ipfs_storage.get_data(args.cid)
+    chunks_list = [int(x) for x in raw.decode('utf-8').split() if x]
+    vm = VM()
+    output = ''.join(vm.execute(decode(chunks_list)))
+    print(output)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Pure UOR VM utilities")
     sub = p.add_subparsers(dest='cmd', required=True)
@@ -63,6 +92,14 @@ def build_parser() -> argparse.ArgumentParser:
     pr = sub.add_parser('run', help='assemble and run program')
     pr.add_argument('source', nargs='?', help='source .asm or encoded .uor file; reads assembly from stdin if omitted')
     pr.set_defaults(func=cmd_run)
+
+    pi = sub.add_parser('ipfs-add', help='assemble program and store via IPFS')
+    pi.add_argument('source', nargs='?', help='assembly or .uor file, defaults to stdin')
+    pi.set_defaults(func=cmd_ipfs_add)
+
+    px = sub.add_parser('ipfs-run', help='run program from IPFS CID')
+    px.add_argument('cid', help='content identifier to fetch')
+    px.set_defaults(func=cmd_ipfs_run)
 
     return p
 
