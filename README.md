@@ -81,3 +81,17 @@ export ANTHROPIC_API_KEY=your-anthropic-key
 export GOOGLE_API_KEY=your-gemini-key
 ```
 
+
+## Asynchronous LLM Helper
+
+Use `uor.async_llm_client.async_call_model` when coordinating multiple agents concurrently. It mirrors `llm_client.call_model` but returns a coroutine that can be awaited.
+
+## Agent Factory
+
+Specialized agents (planner, coder and tester) live under `uor.agents`. The `AppFactory` orchestrates them to create new apps and store the result via IPFS. Run this process through the CLI:
+
+```bash
+python3 uor-cli.py factory "your goal"            # uses OpenAI by default
+```
+
+Pass `--provider` to select another LLM backend.
