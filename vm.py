@@ -46,7 +46,10 @@ class VM:
                     chk = p
                     e -= 6
                 elif e >= 6:
-                    raise ValueError("Duplicate checksum")
+                    if p == BLOCK_TAG and e == 7:
+                        pass
+                    else:
+                        raise ValueError("Duplicate checksum")
                 if e:
                     data.append((p, e))
             if chk is None:

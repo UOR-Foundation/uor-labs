@@ -1,0 +1,13 @@
+PUSH 3
+STORE 0
+start:
+LOAD 0
+JZ end
+LOAD 0
+PRINT
+LOAD 0
+PUSH 1
+SUB
+STORE 0
+JMP start
+end:
