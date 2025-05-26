@@ -44,6 +44,50 @@ def assemble(text: str) -> List[int]:
             result.append(chunks.chunk_sub())
         elif op == "MUL":
             result.append(chunks.chunk_mul())
+        elif op == "DIV":
+            result.append(chunks.chunk_div())
+        elif op == "MOD":
+            result.append(chunks.chunk_mod())
+        elif op == "AND":
+            result.append(chunks.chunk_and())
+        elif op == "OR":
+            result.append(chunks.chunk_or())
+        elif op == "XOR":
+            result.append(chunks.chunk_xor())
+        elif op == "SHL":
+            result.append(chunks.chunk_shl())
+        elif op == "SHR":
+            result.append(chunks.chunk_shr())
+        elif op == "NEG":
+            result.append(chunks.chunk_neg())
+        elif op == "FMUL":
+            result.append(chunks.chunk_fmul())
+        elif op == "FDIV":
+            result.append(chunks.chunk_fdiv())
+        elif op == "F2I":
+            result.append(chunks.chunk_f2i())
+        elif op == "I2F":
+            result.append(chunks.chunk_i2f())
+        elif op == "SYSCALL":
+            result.append(chunks.chunk_syscall())
+        elif op == "INT":
+            result.append(chunks.chunk_int())
+        elif op == "HALT":
+            result.append(chunks.chunk_halt())
+        elif op == "NOP":
+            result.append(chunks.chunk_nop())
+        elif op == "HASH":
+            result.append(chunks.chunk_hash())
+        elif op == "SIGN":
+            result.append(chunks.chunk_sign())
+        elif op == "VERIFY":
+            result.append(chunks.chunk_verify())
+        elif op == "RNG":
+            result.append(chunks.chunk_rng())
+        elif op == "BRK":
+            result.append(chunks.chunk_brk())
+        elif op == "TRACE":
+            result.append(chunks.chunk_trace())
         elif op == "PRINT":
             result.append(chunks.chunk_print())
         elif op == "LOAD":
