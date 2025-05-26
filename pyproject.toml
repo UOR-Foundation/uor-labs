@@ -16,12 +16,34 @@ dependencies = [
     "anthropic",
     "google-generativeai",
     "flask",
+    "llama-cpp-python",
+    "ollama-python",
+    "fastapi",
+    "uvicorn",
+    "aiohttp",
+    "pydantic>=2",
 ]
 
 [project.scripts]
 uor-cli = "uor_cli:main"
 uor-compile = "uor.compiler.cli:main"
+uor-vm = "vm_cli:main"
+uor-generate = "generate_cli:main"
+uor-server = "server_cli:main"
 
 [tool.setuptools]
 packages = ["uor"]
-py-modules = ["assembler", "chunks", "decoder", "primes", "server", "uor", "vm", "uor_cli"]
+py-modules = [
+    "assembler",
+    "async_server",
+    "chunks",
+    "decoder",
+    "generate_cli",
+    "primes",
+    "server",
+    "server_cli",
+    "uor",
+    "uor_cli",
+    "vm",
+    "vm_cli",
+]
