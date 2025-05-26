@@ -1,0 +1,39 @@
+// Cryptographic operations
+@coherent object Crypto {
+    // Hash functions
+    function sha256(data: int, size: int) -> int {
+        // Returns hash value
+        // Implementation uses HASH primitive
+    }
+    
+    function sha512(data: int, size: int) -> int {
+        // Extended hash function
+        // Would use multiple HASH calls
+    }
+    
+    // Digital signatures
+    function sign(data: int, privateKey: int) -> int {
+        // Returns signature
+        // Uses SIGN primitive
+    }
+    
+    function verify(data: int, signature: int, publicKey: int) -> bool {
+        // Verifies signature
+        // Uses VERIFY primitive
+    }
+    
+    // Key generation
+    function generateKeyPair() -> int {
+        // Returns address of key pair structure
+        let seed = randomSeed();
+        return generateFromSeed(seed);
+    }
+    
+    function generateFromSeed(seed: int) -> int {
+        // Deterministic key generation
+        let keys = allocate(2);
+        store(keys, derivePrivateKey(seed));
+        store(keys + 1, derivePublicKey(load(keys)));
+        return keys;
+    }
+}

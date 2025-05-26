@@ -1,0 +1,67 @@
+// Demonstration of standard library usage
+
+// Calculate factorial with coherence
+function testMath() -> void {
+    let m = Math();
+    let result = m.factorial(5);
+    IO.println(result);  // Output: 120
+    
+    let g = m.gcd(48, 18);
+    IO.println(g);  // Output: 6
+    
+    let s = m.sqrt(144);
+    IO.println(s);  // Output: 12
+}
+
+// Using coherent list
+function testList() -> void {
+    let list = CoherentList.new();
+    
+    list.push(10);
+    list.push(20);
+    list.push(30);
+    
+    let value = list.pop();
+    IO.println(value);  // Output: 30
+    
+    list.set(0, 100);
+    let first = list.get(0);
+    IO.println(first);  // Output: 100
+}
+
+// Cryptographic operations
+function testCrypto() -> void {
+    let c = Crypto();
+    
+    // Generate key pair
+    let keys = c.generateKeyPair();
+    let privateKey = load(keys);
+    let publicKey = load(keys + 1);
+    
+    // Sign data
+    let data = 42;
+    let signature = c.sign(data, privateKey);
+    
+    // Verify signature
+    let valid = c.verify(data, signature, publicKey);
+    if (valid) {
+        IO.println(1);  // Success
+    }
+}
+
+// File operations
+function testIO() -> void {
+    let io = IO();
+    
+    // Read user input
+    let value = io.read();
+    
+    // Process and output
+    let result = value * 2;
+    io.println(result);
+    
+    // File operations (hypothetical)
+    let file = io.fileOpen(12345);  // filename as number
+    io.fileWrite(file, result, 1);
+    io.fileClose(file);
+}

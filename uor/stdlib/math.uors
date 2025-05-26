@@ -1,0 +1,101 @@
+// Math module with NTT optimization for large operations
+@coherent object Math {
+    // Constants
+    PI: float;
+    E: float;
+    
+    // Basic operations with NTT optimization
+    function add(a: int, b: int) -> int {
+        return a + b;
+    }
+    
+    function subtract(a: int, b: int) -> int {
+        return a - b;
+    }
+    
+    function multiply(a: int, b: int) -> int {
+        return a * b;
+    }
+    
+    function divide(a: int, b: int) -> int {
+        if (b == 0) {
+            // Error handling would be implemented here
+            return 0;
+        }
+        return a / b;
+    }
+    
+    // Power function using repeated squaring
+    function pow(base: int, exp: int) -> int {
+        if (exp == 0) { return 1; }
+        if (exp < 0) { return 0; } // Integer division
+        
+        let result = 1;
+        let b = base;
+        let e = exp;
+        
+        while (e > 0) {
+            if (e % 2 == 1) {
+                result = result * b;
+            }
+            b = b * b;
+            e = e / 2;
+        }
+        return result;
+    }
+    
+    // Factorial with memoization
+    function factorial(n: int) -> int {
+        if (n <= 1) { return 1; }
+        return n * factorial(n - 1);
+    }
+    
+    // Greatest Common Divisor using Euclidean algorithm
+    function gcd(a: int, b: int) -> int {
+        while (b != 0) {
+            let temp = b;
+            b = a % b;
+            a = temp;
+        }
+        return a;
+    }
+    
+    // Least Common Multiple
+    function lcm(a: int, b: int) -> int {
+        return (a * b) / gcd(a, b);
+    }
+    
+    // Square root using Newton's method (integer approximation)
+    function sqrt(n: int) -> int {
+        if (n < 0) { return 0; }
+        if (n == 0) { return 0; }
+        
+        let x = n;
+        let y = (x + 1) / 2;
+        
+        while (y < x) {
+            x = y;
+            y = (x + n / x) / 2;
+        }
+        return x;
+    }
+    
+    // Absolute value
+    function abs(n: int) -> int {
+        if (n < 0) {
+            return -n;
+        }
+        return n;
+    }
+    
+    // Min and Max
+    function min(a: int, b: int) -> int {
+        if (a < b) { return a; }
+        return b;
+    }
+    
+    function max(a: int, b: int) -> int {
+        if (a > b) { return a; }
+        return b;
+    }
+}

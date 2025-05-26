@@ -1,0 +1,30 @@
+// Simple testing framework
+@coherent object Test {
+    passed: int;
+    failed: int;
+    
+    function new() -> Test {
+        let t = Test();
+        t.passed = 0;
+        t.failed = 0;
+        return t;
+    }
+    
+    function assert(condition: bool, message: int) -> void {
+        if (condition) {
+            passed = passed + 1;
+        } else {
+            failed = failed + 1;
+            IO.print(message);
+        }
+    }
+    
+    function assertEqual(expected: int, actual: int) -> void {
+        assert(expected == actual, 1);
+    }
+    
+    function summary() -> void {
+        IO.print(passed);
+        IO.print(failed);
+    }
+}
