@@ -8,11 +8,16 @@ from typing import Dict, List, Optional
 class SegmentedMemory:
     """Simple segmented memory with heap allocation and GC."""
 
-    PAGE_SIZE = 256
+    # default segment sizes
+    CODE_SIZE = 0x1000
     DATA_SIZE = 0x1000
     HEAP_SIZE = 0x1000
     STACK_SIZE = 0x1000
 
+    PAGE_SIZE = 256
+
+    # default starts (data begins at 0 for backward compat)
+    CODE_START = -CODE_SIZE
     DATA_START = 0x0000
     HEAP_START = DATA_START + DATA_SIZE
     STACK_START = HEAP_START + HEAP_SIZE
@@ -20,16 +25,63 @@ class SegmentedMemory:
     MMIO_IN = STACK_START + STACK_SIZE
     MMIO_OUT = MMIO_IN + 1
 
-    def __init__(self, vm=None) -> None:
+    def __init__(
+        self,
+        vm=None,
+        *,
+        code: Optional[List[int]] = None,
+        code_size: int | None = None,
+        data_size: int | None = None,
+        heap_size: int | None = None,
+        stack_size: int | None = None,
+    ) -> None:
         self.vm = vm
+
+        self.CODE_SIZE = code_size or self.CODE_SIZE
+        self.DATA_SIZE = data_size or self.DATA_SIZE
+        self.HEAP_SIZE = heap_size or self.HEAP_SIZE
+        self.STACK_SIZE = stack_size or self.STACK_SIZE
+
+        self.CODE_START = -self.CODE_SIZE
+        self.DATA_START = 0
+        self.HEAP_START = self.DATA_START + self.DATA_SIZE
+        self.STACK_START = self.HEAP_START + self.HEAP_SIZE
+        self.MMIO_IN = self.STACK_START + self.STACK_SIZE
+        self.MMIO_OUT = self.MMIO_IN + 1
+
         self.storage: Dict[int, int] = {}
         self._free_pages = set(range(self.HEAP_SIZE // self.PAGE_SIZE))
         self._allocations: Dict[int, Dict[str, object]] = {}
+
+        self.code: List[int] = []
+        if code:
+            self.load_code(code)
+
+    def load_code(self, code: List[int]) -> None:
+        """Load prime-encoded instructions into the code segment."""
+        if len(code) > self.CODE_SIZE:
+            raise MemoryError("Program too large for code segment")
+        self.code = list(code)
+
+    def memory_map(self) -> str:
+        """Return a simple textual map of all memory segments."""
+        segs = [
+            ("CODE", self.CODE_START, self.CODE_START + self.CODE_SIZE - 1),
+            ("DATA", self.DATA_START, self.DATA_START + self.DATA_SIZE - 1),
+            ("HEAP", self.HEAP_START, self.HEAP_START + self.HEAP_SIZE - 1),
+            ("STACK", self.STACK_START, self.STACK_START + self.STACK_SIZE - 1),
+            ("MMIO_IN", self.MMIO_IN, self.MMIO_IN),
+            ("MMIO_OUT", self.MMIO_OUT, self.MMIO_OUT),
+        ]
+        lines = [f"{name:8s}: {start:#06x}-{end:#06x}" for name, start, end in segs]
+        return "\n".join(lines)
 
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
     def _segment(self, addr: int) -> str:
+        if self.CODE_START <= addr < self.CODE_START + self.CODE_SIZE:
+            return "code"
         if self.DATA_START <= addr < self.HEAP_START:
             return "data"
         if self.HEAP_START <= addr < self.STACK_START:
@@ -59,6 +111,11 @@ class SegmentedMemory:
     # ------------------------------------------------------------------
     def load(self, addr: int) -> int:
         seg = self._segment(addr)
+        if seg == "code":
+            idx = addr - self.CODE_START
+            if 0 <= idx < len(self.code):
+                return self.code[idx]
+            raise MemoryError("Code address out of range")
         if seg == "mmio":
             if addr == self.MMIO_IN:
                 if self.vm and self.vm.io_in:
@@ -69,6 +126,8 @@ class SegmentedMemory:
 
     def store(self, addr: int, value: int) -> None:
         seg = self._segment(addr)
+        if seg == "code":
+            raise MemoryError("Cannot write to code segment")
         if seg == "mmio":
             if addr == self.MMIO_OUT:
                 if self.vm is not None:

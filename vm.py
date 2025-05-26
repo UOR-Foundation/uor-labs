@@ -44,6 +44,10 @@ class VM:
     def __init__(self, profiler: Optional[VMProfiler] = None) -> None:
         self.stack: List[int] = []
         self.mem = SegmentedMemory(self)
+        self.cs = self.mem.CODE_START
+        self.ds = self.mem.DATA_START
+        self.hs = self.mem.HEAP_START
+        self.ss = self.mem.STACK_START
         self.ip: int = 0
         self.call_stack: List[int] = []
         self.io_in: List[int] = []

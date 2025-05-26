@@ -36,6 +36,19 @@ class SegmentedMemoryTest(unittest.TestCase):
         vm.mem.store(SegmentedMemory.MMIO_OUT, 99)
         self.assertIn(99, vm.io_out)
 
+    def test_code_segment_protection(self):
+        mem = SegmentedMemory()
+        mem.load_code([1, 2, 3])
+        self.assertEqual(mem.load(mem.CODE_START), 1)
+        with self.assertRaises(MemoryError):
+            mem.store(mem.CODE_START, 5)
+
+    def test_memory_map_visualization(self):
+        mem = SegmentedMemory()
+        mapping = mem.memory_map()
+        self.assertIn("CODE", mapping)
+        self.assertIn("DATA", mapping)
+
 
 if __name__ == "__main__":
     unittest.main()
