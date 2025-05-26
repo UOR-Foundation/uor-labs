@@ -20,6 +20,7 @@ dependencies = [
 
 [project.scripts]
 uor-cli = "uor_cli:main"
+uor-compile = "uor.compiler.cli:main"
 
 [tool.setuptools]
 packages = ["uor"]
