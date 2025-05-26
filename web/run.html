@@ -4,9 +4,12 @@
 <body>
 <h1>Run Program</h1>
 <textarea id="src" rows="10" cols="60"></textarea><br>
+<input type="file" id="file"><br>
 <button id="run">Run</button>
 <pre id="result"></pre>
-<script>
+<script type="module">
+import {setupFileLoader} from './utils.js';
+setupFileLoader('file', 'src');
 document.getElementById('run').onclick = async function() {
     const src = document.getElementById('src').value;
     const resp = await fetch('/run', {
@@ -15,7 +18,8 @@ document.getElementById('run').onclick = async function() {
         body: JSON.stringify({text: src})
     });
     const data = await resp.json();
-    document.getElementById('result').textContent = JSON.stringify(data);
+    const out = data.output !== undefined ? data.output : JSON.stringify(data, null, 2);
+    document.getElementById('result').textContent = out;
 };
 </script>
 </body>
