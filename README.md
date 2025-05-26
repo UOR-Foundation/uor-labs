@@ -68,6 +68,16 @@ Unit tests reside in `tests/`.  Run them with:
 python3 -m unittest discover -v
 ```
 
+Integration tests covering full programs are located under
+`tests/integration`. Run them with the same command to verify end-to-end
+behaviour.
+
+## Debugging
+
+Use the `BRK` instruction to pause execution at a breakpoint and `TRACE`
+to log the top stack value during runtime. These opcodes make diagnosing
+complex programs easier.
+
 
 ## Optional IPFS Support
 
