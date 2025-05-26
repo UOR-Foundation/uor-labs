@@ -5,7 +5,20 @@ from typing import List, Tuple
 
 import time
 from primes import get_prime, _PRIME_IDX, factor
-from chunks import BLOCK_TAG, NTT_TAG
+from chunks import (
+    BLOCK_TAG,
+    NTT_TAG,
+    OP_CALL,
+    OP_RET,
+    OP_ALLOC,
+    OP_FREE,
+    OP_INPUT,
+    OP_OUTPUT,
+    OP_NET_SEND,
+    OP_NET_RECV,
+    OP_THREAD_START,
+    OP_THREAD_JOIN,
+)
 
 
 @dataclass
