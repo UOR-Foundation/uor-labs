@@ -9,7 +9,7 @@ from primes import get_prime, _PRIME_IDX
 from primes import _PRIMES
 from primes import _extend_primes_to
 
-_extend_primes_to(24)
+_extend_primes_to(30)
 OP_PUSH, OP_ADD, OP_PRINT = _PRIMES[0], _PRIMES[1], _PRIMES[2]
 OP_SUB, OP_MUL = _PRIMES[6], _PRIMES[7]
 OP_LOAD, OP_STORE = _PRIMES[8], _PRIMES[9]
@@ -21,6 +21,8 @@ OP_INPUT, OP_OUTPUT = _PRIMES[18], _PRIMES[19]
 OP_NET_SEND, OP_NET_RECV = _PRIMES[20], _PRIMES[21]
 OP_THREAD_START, OP_THREAD_JOIN = _PRIMES[22], _PRIMES[23]
 OP_CHECKPOINT = _PRIMES[24]
+OP_UN_CREATE, OP_UN_GRADE, OP_UN_INNER = _PRIMES[25], _PRIMES[26], _PRIMES[27]
+OP_UN_NORM, OP_UN_TRANS, OP_UN_DWT = _PRIMES[28], _PRIMES[29], _PRIMES[30]
 BLOCK_TAG, NTT_TAG, T_MOD = _PRIMES[3], _PRIMES[4], _PRIMES[5]
 NTT_ROOT = 2
 
@@ -182,3 +184,29 @@ def chunk_thread_join() -> int:
 def chunk_checkpoint() -> int:
     """Encode a CHECKPOINT instruction."""
     return _attach_checksum(OP_CHECKPOINT ** 4, [(OP_CHECKPOINT, 4)])
+
+
+def chunk_un_create(val: int) -> int:
+    p = get_prime(val)
+    return _attach_checksum(OP_UN_CREATE ** 4 * p ** 5, [(OP_UN_CREATE, 4), (p, 5)])
+
+
+def chunk_un_grade(val: int) -> int:
+    p = get_prime(val)
+    return _attach_checksum(OP_UN_GRADE ** 4 * p ** 5, [(OP_UN_GRADE, 4), (p, 5)])
+
+
+def chunk_un_inner() -> int:
+    return _attach_checksum(OP_UN_INNER ** 4, [(OP_UN_INNER, 4)])
+
+
+def chunk_un_norm() -> int:
+    return _attach_checksum(OP_UN_NORM ** 4, [(OP_UN_NORM, 4)])
+
+
+def chunk_un_trans() -> int:
+    return _attach_checksum(OP_UN_TRANS ** 4, [(OP_UN_TRANS, 4)])
+
+
+def chunk_un_dwt() -> int:
+    return _attach_checksum(OP_UN_DWT ** 4, [(OP_UN_DWT, 4)])
