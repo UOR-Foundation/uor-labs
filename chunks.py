@@ -9,7 +9,7 @@ from primes import get_prime, _PRIME_IDX
 from primes import _PRIMES
 from primes import _extend_primes_to
 
-_extend_primes_to(23)
+_extend_primes_to(24)
 OP_PUSH, OP_ADD, OP_PRINT = _PRIMES[0], _PRIMES[1], _PRIMES[2]
 OP_SUB, OP_MUL = _PRIMES[6], _PRIMES[7]
 OP_LOAD, OP_STORE = _PRIMES[8], _PRIMES[9]
@@ -20,6 +20,7 @@ OP_ALLOC, OP_FREE = _PRIMES[16], _PRIMES[17]
 OP_INPUT, OP_OUTPUT = _PRIMES[18], _PRIMES[19]
 OP_NET_SEND, OP_NET_RECV = _PRIMES[20], _PRIMES[21]
 OP_THREAD_START, OP_THREAD_JOIN = _PRIMES[22], _PRIMES[23]
+OP_CHECKPOINT = _PRIMES[24]
 BLOCK_TAG, NTT_TAG, T_MOD = _PRIMES[3], _PRIMES[4], _PRIMES[5]
 NTT_ROOT = 2
 
@@ -176,3 +177,8 @@ def chunk_thread_start() -> int:
 
 def chunk_thread_join() -> int:
     return _attach_checksum(OP_THREAD_JOIN ** 4, [(OP_THREAD_JOIN, 4)])
+
+
+def chunk_checkpoint() -> int:
+    """Encode a CHECKPOINT instruction."""
+    return _attach_checksum(OP_CHECKPOINT ** 4, [(OP_CHECKPOINT, 4)])
