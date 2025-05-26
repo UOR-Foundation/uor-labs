@@ -88,6 +88,10 @@ def assemble(text: str) -> List[int]:
             result.append(chunks.chunk_brk())
         elif op == "TRACE":
             result.append(chunks.chunk_trace())
+        elif op == "DEBUG":
+            result.append(chunks.chunk_debug())
+        elif op == "ATOMIC":
+            result.append(chunks.chunk_atomic())
         elif op == "PRINT":
             result.append(chunks.chunk_print())
         elif op == "LOAD":

@@ -33,7 +33,7 @@ from chunks import (
     OP_DIV, OP_MOD, OP_AND, OP_OR, OP_XOR, OP_SHL, OP_SHR, OP_NEG,
     OP_FMUL, OP_FDIV, OP_F2I, OP_I2F,
     OP_SYSCALL, OP_INT, OP_HALT, OP_NOP,
-    OP_HASH, OP_SIGN, OP_VERIFY, OP_RNG, OP_BRK, OP_TRACE,
+    OP_HASH, OP_SIGN, OP_VERIFY, OP_RNG, OP_BRK, OP_TRACE, OP_DEBUG, OP_ATOMIC,
     NEG_FLAG,
     BLOCK_TAG, NTT_TAG, T_MOD,
     NTT_ROOT,
@@ -48,6 +48,7 @@ class VM:
         self.call_stack: List[int] = []
         self.io_in: List[int] = []
         self.io_out: List[int] = []
+        self.atomic: bool = False
         self._counter: Dict[int, int] = {}
         self._compiled: Dict[int, JITBlock] = {}
         self.jit_threshold: int = 100
@@ -95,6 +96,8 @@ class VM:
             OP_RNG: self._op_rng,
             OP_BRK: self._op_brk,
             OP_TRACE: self._op_trace,
+            OP_DEBUG: self._op_debug,
+            OP_ATOMIC: self._op_atomic,
             OP_INPUT: self._op_input,
             OP_OUTPUT: self._op_output,
             OP_NET_SEND: self._op_net_send,
@@ -493,4 +496,11 @@ class VM:
 
     def _op_trace(self, data: List[Tuple[int, int]]) -> Iterator[str]:
         yield str(self.stack[-1] if self.stack else 0)
+
+    def _op_debug(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        yield "DEBUG"
+
+    def _op_atomic(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        self.atomic = not self.atomic
+        return iter(())
 
