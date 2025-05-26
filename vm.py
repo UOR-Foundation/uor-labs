@@ -1,10 +1,11 @@
 """Virtual machine implementation."""
 from __future__ import annotations
 
-from typing import List, Dict, Iterator, Tuple
+from typing import List, Dict, Iterator, Tuple, Optional
 import time
 
 from uor.jit import JITCompiler, JITBlock
+from uor.vm import Profiler
 
 from decoder import DecodedInstruction
 
@@ -27,7 +28,7 @@ from chunks import (
 
 
 class VM:
-    def __init__(self) -> None:
+    def __init__(self, profiler: Optional[Profiler] = None) -> None:
         self.stack: List[int] = []
         self.mem: Dict[int, int] = {}
         self.ip: int = 0
@@ -38,6 +39,7 @@ class VM:
         self._compiled: Dict[int, JITBlock] = {}
         self.jit_threshold: int = 100
         self._jit = JITCompiler()
+        self.profiler = profiler
         self.executed_instructions: int = 0
         self.checkpoint_backend = None
         self.checkpoint_policy = None
@@ -80,6 +82,8 @@ class VM:
             if self._jit.available and self.ip in self._compiled:
                 yield from self._compiled[self.ip](self)
                 self.executed_instructions += 1
+                if self.profiler:
+                    self.profiler.record_instruction(self, cache_hit=True)
                 if self.checkpoint_policy and self.checkpoint_policy.should_checkpoint(self):
                     self.checkpoint()
                 continue
@@ -101,6 +105,8 @@ class VM:
             if any(p == BLOCK_TAG and e == 7 for p, e in data):
                 yield from VM().execute(instr.inner or [])
                 self.executed_instructions += 1
+                if self.profiler:
+                    self.profiler.record_instruction(self)
                 if self.checkpoint_policy and self.checkpoint_policy.should_checkpoint(self):
                     self.checkpoint()
                 continue
@@ -135,6 +141,8 @@ class VM:
                     vec = _intt(_ntt(vec))
                 yield from VM().execute(inner)
                 self.executed_instructions += 1
+                if self.profiler:
+                    self.profiler.record_instruction(self)
                 if self.checkpoint_policy and self.checkpoint_policy.should_checkpoint(self):
                     self.checkpoint()
                 continue
@@ -147,6 +155,8 @@ class VM:
                     raise ValueError("Unknown opcode")
                 yield from handler(data)
                 self.executed_instructions += 1
+                if self.profiler:
+                    self.profiler.record_instruction(self)
                 if self.checkpoint_policy and self.checkpoint_policy.should_checkpoint(self):
                     self.checkpoint()
             else:
@@ -155,6 +165,8 @@ class VM:
                     raise ValueError("Bad data")
                 yield chr(_PRIME_IDX[p_chr])
                 self.executed_instructions += 1
+                if self.profiler:
+                    self.profiler.record_instruction(self)
                 if self.checkpoint_policy and self.checkpoint_policy.should_checkpoint(self):
                     self.checkpoint()
 
@@ -254,16 +266,27 @@ class VM:
     def _op_input(self, data: List[Tuple[int, int]]) -> Iterator[str]:
         val = self.io_in.pop(0) if self.io_in else 0
         self.stack.append(val)
+        if self.profiler:
+            self.profiler.record_io()
         return iter(())
 
     def _op_output(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        if self.profiler:
+            self.profiler.record_io()
         yield str(self.stack.pop())
 
     def _op_net_send(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        start = time.time()
+        # network operation would occur here
+        if self.profiler:
+            self.profiler.record_network_latency(time.time() - start)
         return iter(())
 
     def _op_net_recv(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        start = time.time()
         self.stack.append(0)
+        if self.profiler:
+            self.profiler.record_network_latency(time.time() - start)
         return iter(())
 
     def _op_thread_start(self, data: List[Tuple[int, int]]) -> Iterator[str]:
