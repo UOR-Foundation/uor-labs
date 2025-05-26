@@ -20,3 +20,11 @@ Generate a program via LLM::
 Run with the debugger::
 
    uor-cli debug -b 1 program.asm
+
+Profile a program::
+
+   uor-cli profile program.asm
+
+Export a flamegraph::
+
+   uor-cli flamegraph program.asm
