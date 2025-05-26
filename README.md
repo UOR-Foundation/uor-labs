@@ -132,6 +132,17 @@ pip install -r requirements.txt
 ipfs daemon &
 ```
 
+### Canonical Addressing
+
+`uor.addressing` introduces a canonical storage system based on 512‑bit prime
+digests. Objects are hashed with SHA‑512 and mapped to the nearest prime to
+create deterministic addresses. A lightweight distributed hash table manages the
+mapping from addresses to IPFS CIDs while providing an LRU cache for frequent
+lookups. Namespaces like `org.uor.stdlib.math` resolve to their canonical
+address so different VMs can reference and retrieve identical objects.
+
+See `examples/canonical_demo.py` for a short example.
+
 ## LLM API Keys
 
 The upcoming LLM helpers require API credentials. Set the following environment
