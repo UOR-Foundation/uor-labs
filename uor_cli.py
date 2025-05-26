@@ -19,6 +19,7 @@ from vm import VM
 from decoder import decode
 import chunks
 import assembler
+import time
 
 
 def cmd_assemble(args: argparse.Namespace) -> int:
@@ -101,6 +102,60 @@ async def cmd_factory(args: argparse.Namespace) -> int:
     return 0
 
 
+def _execute_prog(chunks_list: list[int]) -> str:
+    """Helper to run a small program and capture output."""
+    vm = VM()
+    return "".join(vm.execute(decode(chunks_list)))
+
+
+def cmd_universal_create(args: argparse.Namespace) -> int:
+    """Create a universal number and print the VM output."""
+    prog = [
+        chunks.chunk_un_create(int(args.value)),
+        chunks.chunk_print(),
+    ]
+    out = _execute_prog(prog)
+    print(out)
+    return 0
+
+
+def cmd_universal_dwt(args: argparse.Namespace) -> int:
+    """Run a DWT on the provided signal file."""
+    with open(args.signal_file, "r", encoding="utf-8") as fh:
+        values = [int(x) for x in fh.read().split() if x]
+    prog = [chunks.chunk_push(v) for v in values]
+    prog.append(chunks.chunk_un_dwt())
+    prog.append(chunks.chunk_print())
+    out = _execute_prog(prog)
+    print(out)
+    return 0
+
+
+def cmd_universal_denoise(args: argparse.Namespace) -> int:
+    """Denoise an image using universal operations."""
+    with open(args.image_file, "r", encoding="utf-8") as fh:
+        values = [int(x) for x in fh.read().split() if x]
+    prog = [chunks.chunk_push(v) for v in values]
+    prog.append(chunks.chunk_un_dwt())
+    prog.append(chunks.chunk_un_trans())
+    prog.append(chunks.chunk_print())
+    out = _execute_prog(prog)
+    print(out)
+    return 0
+
+
+def cmd_universal_benchmark(args: argparse.Namespace) -> int:
+    """Benchmark universal operations."""
+    prog = [chunks.chunk_un_create(1)]
+    decoded = decode(prog)
+    vm = VM()
+    start = time.time()
+    vm.execute(decoded)
+    elapsed = time.time() - start
+    print(f"{elapsed:.6f}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Pure UOR VM utilities")
     sub = p.add_subparsers(dest='cmd', required=True)
@@ -135,6 +190,24 @@ def build_parser() -> argparse.ArgumentParser:
                     help='LLM provider to use')
     pf.add_argument('goal', help='high level goal for the app')
     pf.set_defaults(func=cmd_factory)
+
+    un = sub.add_parser('universal', help='universal number helpers')
+    un_sub = un.add_subparsers(dest='u_cmd', required=True)
+
+    uc = un_sub.add_parser('create', help='create universal number')
+    uc.add_argument('value', type=int)
+    uc.set_defaults(func=cmd_universal_create)
+
+    ud = un_sub.add_parser('dwt', help='apply DWT to signal')
+    ud.add_argument('signal_file')
+    ud.set_defaults(func=cmd_universal_dwt)
+
+    une = un_sub.add_parser('denoise', help='denoise image using universal ops')
+    une.add_argument('image_file')
+    une.set_defaults(func=cmd_universal_denoise)
+
+    ub = un_sub.add_parser('benchmark', help='benchmark universal ops')
+    ub.set_defaults(func=cmd_universal_benchmark)
 
     return p
 
