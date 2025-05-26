@@ -9,7 +9,7 @@ from primes import get_prime, _PRIME_IDX
 from primes import _PRIMES
 from primes import _extend_primes_to
 
-_extend_primes_to(54)
+_extend_primes_to(67)
 OP_PUSH, OP_ADD, OP_PRINT = _PRIMES[0], _PRIMES[1], _PRIMES[2]
 OP_SUB, OP_MUL = _PRIMES[6], _PRIMES[7]
 OP_LOAD, OP_STORE = _PRIMES[8], _PRIMES[9]
@@ -32,6 +32,11 @@ OP_NOP, OP_HASH, OP_SIGN = _PRIMES[46], _PRIMES[47], _PRIMES[48]
 OP_VERIFY, OP_RNG, OP_BRK = _PRIMES[49], _PRIMES[50], _PRIMES[51]
 OP_TRACE = _PRIMES[52]
 OP_DEBUG, OP_ATOMIC = _PRIMES[53], _PRIMES[54]
+OP_NOT, OP_GT, OP_LT = _PRIMES[55], _PRIMES[56], _PRIMES[57]
+OP_EQ, OP_NEQ, OP_GTE = _PRIMES[58], _PRIMES[59], _PRIMES[60]
+OP_LTE, OP_DUP, OP_SWAP = _PRIMES[61], _PRIMES[62], _PRIMES[63]
+OP_ROT, OP_DROP, OP_OVER = _PRIMES[64], _PRIMES[65], _PRIMES[66]
+OP_PICK = _PRIMES[67]
 BLOCK_TAG, NTT_TAG, T_MOD = _PRIMES[3], _PRIMES[4], _PRIMES[5]
 NTT_ROOT = 2
 
@@ -315,3 +320,55 @@ def chunk_debug() -> int:
 
 def chunk_atomic() -> int:
     return _attach_checksum(OP_ATOMIC ** 4, [(OP_ATOMIC, 4)])
+
+
+def chunk_not() -> int:
+    return _attach_checksum(OP_NOT ** 4, [(OP_NOT, 4)])
+
+
+def chunk_gt() -> int:
+    return _attach_checksum(OP_GT ** 4, [(OP_GT, 4)])
+
+
+def chunk_lt() -> int:
+    return _attach_checksum(OP_LT ** 4, [(OP_LT, 4)])
+
+
+def chunk_eq() -> int:
+    return _attach_checksum(OP_EQ ** 4, [(OP_EQ, 4)])
+
+
+def chunk_neq() -> int:
+    return _attach_checksum(OP_NEQ ** 4, [(OP_NEQ, 4)])
+
+
+def chunk_gte() -> int:
+    return _attach_checksum(OP_GTE ** 4, [(OP_GTE, 4)])
+
+
+def chunk_lte() -> int:
+    return _attach_checksum(OP_LTE ** 4, [(OP_LTE, 4)])
+
+
+def chunk_dup() -> int:
+    return _attach_checksum(OP_DUP ** 4, [(OP_DUP, 4)])
+
+
+def chunk_swap() -> int:
+    return _attach_checksum(OP_SWAP ** 4, [(OP_SWAP, 4)])
+
+
+def chunk_rot() -> int:
+    return _attach_checksum(OP_ROT ** 4, [(OP_ROT, 4)])
+
+
+def chunk_drop() -> int:
+    return _attach_checksum(OP_DROP ** 4, [(OP_DROP, 4)])
+
+
+def chunk_over() -> int:
+    return _attach_checksum(OP_OVER ** 4, [(OP_OVER, 4)])
+
+
+def chunk_pick() -> int:
+    return _attach_checksum(OP_PICK ** 4, [(OP_PICK, 4)])

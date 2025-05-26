@@ -43,6 +43,78 @@ class VMEnhancedTest(unittest.TestCase):
             out = ''.join(vm.execute(prog))
             self.assertEqual(out, '1')
 
+    def test_comparison_and_not_ops(self):
+        prog = [
+            chunks.chunk_push(5),
+            chunks.chunk_not(),
+            chunks.chunk_print(),
+            chunks.chunk_push(3),
+            chunks.chunk_push(2),
+            chunks.chunk_gt(),
+            chunks.chunk_print(),
+            chunks.chunk_push(2),
+            chunks.chunk_push(3),
+            chunks.chunk_lt(),
+            chunks.chunk_print(),
+            chunks.chunk_push(5),
+            chunks.chunk_push(5),
+            chunks.chunk_eq(),
+            chunks.chunk_print(),
+            chunks.chunk_push(4),
+            chunks.chunk_push(5),
+            chunks.chunk_neq(),
+            chunks.chunk_print(),
+            chunks.chunk_push(3),
+            chunks.chunk_push(2),
+            chunks.chunk_gte(),
+            chunks.chunk_print(),
+            chunks.chunk_push(3),
+            chunks.chunk_push(3),
+            chunks.chunk_lte(),
+            chunks.chunk_print(),
+        ]
+        out = ''.join(VM().execute(decode(prog)))
+        self.assertEqual(out, '-6111111')
+
+    def test_stack_manipulation_ops(self):
+        prog = [
+            chunks.chunk_push(1),
+            chunks.chunk_dup(),
+            chunks.chunk_add(),
+            chunks.chunk_print(),
+            chunks.chunk_push(2),
+            chunks.chunk_push(3),
+            chunks.chunk_swap(),
+            chunks.chunk_sub(),
+            chunks.chunk_print(),
+            chunks.chunk_push(4),
+            chunks.chunk_push(5),
+            chunks.chunk_push(6),
+            chunks.chunk_rot(),
+            chunks.chunk_drop(),
+            chunks.chunk_print(),
+            chunks.chunk_drop(),
+            chunks.chunk_push(7),
+            chunks.chunk_push(8),
+            chunks.chunk_over(),
+            chunks.chunk_sub(),
+            chunks.chunk_print(),
+            chunks.chunk_drop(),
+            chunks.chunk_push(9),
+            chunks.chunk_push(10),
+            chunks.chunk_push(11),
+            chunks.chunk_push(12),
+            chunks.chunk_push(2),
+            chunks.chunk_pick(),
+            chunks.chunk_print(),
+            chunks.chunk_drop(),
+            chunks.chunk_drop(),
+            chunks.chunk_drop(),
+            chunks.chunk_drop(),
+        ]
+        out = ''.join(VM().execute(decode(prog)))
+        self.assertEqual(out, '216110')
+
 
 if __name__ == '__main__':
     unittest.main()
