@@ -54,8 +54,8 @@ class VM:
         self.io_out: List[int] = []
         self.atomic: bool = False
         self._counter: Dict[int, int] = {}
-        self._compiled: Dict[int, JITBlock] = {}
-        self.jit_threshold: int = 100
+        self._compiled: Dict[int, Tuple[JITBlock, float]] = {}
+        self.jit_threshold: int = 1000
         self._jit = JITCompiler()
         self.profiler = profiler
         self.executed_instructions: int = 0
@@ -145,15 +145,19 @@ class VM:
                 raise SegmentationFaultError("Instruction pointer out of range", self.ip)
             ip_before = self.ip
             if self._jit.available and self.ip in self._compiled:
-                start_t = time.perf_counter()
-                yield from self._compiled[self.ip](self)
-                duration = time.perf_counter() - start_t
-                self.executed_instructions += 1
-                if self.profiler:
-                    self.profiler.record_instruction(ip_before, None, duration, cache_hit=True)
-                if self.checkpoint_policy and self.checkpoint_policy.should_checkpoint(self):
-                    self.checkpoint()
-                continue
+                block, exp = self._compiled[self.ip]
+                if exp < time.time():
+                    self._compiled.pop(self.ip, None)
+                else:
+                    start_t = time.perf_counter()
+                    yield from block(self)
+                    duration = time.perf_counter() - start_t
+                    self.executed_instructions += 1
+                    if self.profiler:
+                        self.profiler.record_instruction(ip_before, None, duration, cache_hit=True)
+                    if self.checkpoint_policy and self.checkpoint_policy.should_checkpoint(self):
+                        self.checkpoint()
+                    continue
 
             instr = program[self.ip]
             self._counter[self.ip] = self._counter.get(self.ip, 0) + 1
@@ -164,7 +168,7 @@ class VM:
             ):
                 block = self._jit.compile_block([instr])
                 if block is not None:
-                    self._compiled[self.ip] = block
+                    self._compiled[self.ip] = (block, time.time() + self._jit.ttl)
 
             self.ip += 1
             data = instr.data
