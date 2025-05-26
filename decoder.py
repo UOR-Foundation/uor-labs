@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Tuple
 
+import time
 from primes import get_prime, _PRIME_IDX, factor
 from chunks import BLOCK_TAG, NTT_TAG
 
@@ -10,10 +11,11 @@ from chunks import BLOCK_TAG, NTT_TAG
 @dataclass
 class DecodedInstruction:
     data: List[Tuple[int, int]]
-    inner: List['DecodedInstruction'] | None = None
+    inner: List["DecodedInstruction"] | None = None
 
 
 def _decode_single(chunk: int) -> List[Tuple[int, int]]:
+    time.sleep(0.0001)
     fac = factor(chunk)
     chk = None
     data: List[Tuple[int, int]] = []
@@ -49,12 +51,12 @@ def decode(chunks: List[int]) -> List[DecodedInstruction]:
         if any(p == BLOCK_TAG and e == 7 for p, e in data):
             lp = next(p for p, e in data if p != BLOCK_TAG and e == 5)
             cnt = _PRIME_IDX[lp]
-            inner = decode(chunks[ip:ip + cnt])
+            inner = decode(chunks[ip : ip + cnt])
             ip += cnt
         elif any(p == NTT_TAG and e == 4 for p, e in data):
             lp = next(p for p, e in data if p != NTT_TAG and e == 5)
             cnt = _PRIME_IDX[lp]
-            inner = decode(chunks[ip:ip + cnt])
+            inner = decode(chunks[ip : ip + cnt])
             ip += cnt
         result.append(DecodedInstruction(data=data, inner=inner))
     return result
