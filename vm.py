@@ -7,6 +7,12 @@ import time
 from uor.jit import JITCompiler, JITBlock
 from uor.vm import Profiler
 from uor.memory import SegmentedMemory
+from uor.exceptions import (
+    DivisionByZeroError,
+    MemoryAccessError,
+    StackOverflowError,
+    InvalidOpcodeError,
+)
 
 from decoder import DecodedInstruction
 
@@ -181,7 +187,7 @@ class VM:
                 op = next(p for p, e in data if e == 4)
                 handler = self._dispatch.get(op)
                 if handler is None:
-                    raise ValueError("Unknown opcode")
+                    raise InvalidOpcodeError("Unknown opcode", self.ip - 1)
                 yield from handler(data)
                 self.executed_instructions += 1
                 if self.profiler:
@@ -206,6 +212,8 @@ class VM:
     def _op_push(self, data: List[Tuple[int, int]]) -> Iterator[str]:
         v = next(p for p, e in data if e == 5)
         self.stack.append(_PRIME_IDX[v])
+        if len(self.stack) > SegmentedMemory.STACK_SIZE:
+            raise StackOverflowError("Stack overflow", self.ip - 1)
         return iter(())
 
     def _binary_op(self, func) -> None:
@@ -227,14 +235,20 @@ class VM:
     def _op_load(self, data: List[Tuple[int, int]]) -> Iterator[str]:
         addr_p = next(p for p, e in data if e == 5)
         addr = _PRIME_IDX[addr_p]
-        self.stack.append(self.mem.load(addr))
+        try:
+            self.stack.append(self.mem.load(addr))
+        except MemoryError as exc:
+            raise MemoryAccessError(str(exc), self.ip - 1) from None
         return iter(())
 
     def _op_store(self, data: List[Tuple[int, int]]) -> Iterator[str]:
         addr_p = next(p for p, e in data if e == 5)
         addr = _PRIME_IDX[addr_p]
         val = self.stack.pop()
-        self.mem.store(addr, val)
+        try:
+            self.mem.store(addr, val)
+        except MemoryError as exc:
+            raise MemoryAccessError(str(exc), self.ip - 1) from None
         return iter(())
 
     def _op_jmp(self, data: List[Tuple[int, int]]) -> Iterator[str]:
@@ -281,7 +295,10 @@ class VM:
     def _op_alloc(self, data: List[Tuple[int, int]]) -> Iterator[str]:
         size_p = next(p for p, e in data if e == 5)
         size = _PRIME_IDX[size_p]
-        addr = self.mem.allocate(size)
+        try:
+            addr = self.mem.allocate(size)
+        except MemoryError as exc:
+            raise MemoryAccessError(str(exc), self.ip - 1) from None
         self.stack.append(addr)
         return iter(())
 
@@ -334,11 +351,19 @@ class VM:
     # ------------------------------------------------------------------
 
     def _op_div(self, data: List[Tuple[int, int]]) -> Iterator[str]:
-        self._binary_op(lambda a, b: a // b)
+        b = self.stack.pop()
+        a = self.stack.pop()
+        if b == 0:
+            raise DivisionByZeroError("Division by zero", self.ip - 1)
+        self.stack.append(a // b)
         return iter(())
 
     def _op_mod(self, data: List[Tuple[int, int]]) -> Iterator[str]:
-        self._binary_op(lambda a, b: a % b)
+        b = self.stack.pop()
+        a = self.stack.pop()
+        if b == 0:
+            raise DivisionByZeroError("Modulo by zero", self.ip - 1)
+        self.stack.append(a % b)
         return iter(())
 
     def _op_and(self, data: List[Tuple[int, int]]) -> Iterator[str]:
@@ -373,6 +398,8 @@ class VM:
 
     def _op_fdiv(self, data: List[Tuple[int, int]]) -> Iterator[str]:
         b, a = float(self.stack.pop()), float(self.stack.pop())
+        if b == 0:
+            raise DivisionByZeroError("Float division by zero", self.ip - 1)
         self.stack.append(a / b)
         return iter(())
 
