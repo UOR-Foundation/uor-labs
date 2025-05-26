@@ -27,7 +27,8 @@ class DecodedInstruction:
     inner: List["DecodedInstruction"] | None = None
 
 
-def _decode_single(chunk: int) -> List[Tuple[int, int]]:
+def _decode_single(chunk: int) -> DecodedInstruction:
+    """Decode a single chunk into a ``DecodedInstruction`` object."""
     time.sleep(0.0001)
     fac = factor(chunk)
     chk = None
@@ -37,6 +38,8 @@ def _decode_single(chunk: int) -> List[Tuple[int, int]]:
             chk = p
             e -= 6
         elif e >= 6:
+            # ``BLOCK`` uses exponent 7 in addition to the checksum. Allow it
+            # as a special case instead of treating it as a duplicate checksum.
             if p == BLOCK_TAG and e == 7:
                 pass
             else:
@@ -50,26 +53,28 @@ def _decode_single(chunk: int) -> List[Tuple[int, int]]:
         xor ^= _PRIME_IDX[p] * e
     if chk != get_prime(xor):
         raise ValueError("Checksum mismatch")
-    return data
+
+    return DecodedInstruction(data=data)
 
 
 def decode(chunks: List[int]) -> List[DecodedInstruction]:
+    """Decode a list of numeric chunks into ``DecodedInstruction`` objects."""
     result: List[DecodedInstruction] = []
     ip = 0
     while ip < len(chunks):
         ck = chunks[ip]
         ip += 1
-        data = _decode_single(ck)
-        inner: List[DecodedInstruction] | None = None
+        instr = _decode_single(ck)
+        data = instr.data
         if any(p == BLOCK_TAG and e == 7 for p, e in data):
             lp = next(p for p, e in data if p != BLOCK_TAG and e == 5)
             cnt = _PRIME_IDX[lp]
-            inner = decode(chunks[ip : ip + cnt])
+            instr.inner = decode(chunks[ip : ip + cnt])
             ip += cnt
         elif any(p == NTT_TAG and e == 4 for p, e in data):
             lp = next(p for p, e in data if p != NTT_TAG and e == 5)
             cnt = _PRIME_IDX[lp]
-            inner = decode(chunks[ip : ip + cnt])
+            instr.inner = decode(chunks[ip : ip + cnt])
             ip += cnt
-        result.append(DecodedInstruction(data=data, inner=inner))
+        result.append(instr)
     return result
