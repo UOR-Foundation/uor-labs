@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from typing import List, Dict, Iterator, Tuple
+import time
 
 from uor.jit import JITCompiler, JITBlock
 
@@ -18,6 +19,7 @@ from chunks import (
     OP_INPUT, OP_OUTPUT,
     OP_NET_SEND, OP_NET_RECV,
     OP_THREAD_START, OP_THREAD_JOIN,
+    OP_CHECKPOINT,
     NEG_FLAG,
     BLOCK_TAG, NTT_TAG, T_MOD,
     NTT_ROOT,
@@ -36,6 +38,10 @@ class VM:
         self._compiled: Dict[int, JITBlock] = {}
         self.jit_threshold: int = 100
         self._jit = JITCompiler()
+        self.executed_instructions: int = 0
+        self.checkpoint_backend = None
+        self.checkpoint_policy = None
+        self.last_checkpoint_id: str | None = None
         self._dispatch = {
             OP_PUSH: self._op_push,
             OP_ADD: self._op_add,
@@ -57,13 +63,25 @@ class VM:
             OP_NET_RECV: self._op_net_recv,
             OP_THREAD_START: self._op_thread_start,
             OP_THREAD_JOIN: self._op_thread_join,
+            OP_CHECKPOINT: self._op_checkpoint,
         }
 
-    def execute(self, program: List[DecodedInstruction]) -> Iterator[str]:
-        self.ip = 0
+    def checkpoint(self) -> None:
+        if self.checkpoint_backend is not None:
+            import uor.vm.checkpoint as cp
+            payload = cp.serialize_state(self.stack, self.mem, self.ip)
+            name = f"cp_{int(time.time()*1000)}"
+            self.last_checkpoint_id = self.checkpoint_backend.save(name, payload)
+
+    def execute(self, program: List[DecodedInstruction], resume: bool = False) -> Iterator[str]:
+        if not resume:
+            self.ip = 0
         while self.ip < len(program):
             if self._jit.available and self.ip in self._compiled:
                 yield from self._compiled[self.ip](self)
+                self.executed_instructions += 1
+                if self.checkpoint_policy and self.checkpoint_policy.should_checkpoint(self):
+                    self.checkpoint()
                 continue
 
             instr = program[self.ip]
@@ -82,6 +100,9 @@ class VM:
 
             if any(p == BLOCK_TAG and e == 7 for p, e in data):
                 yield from VM().execute(instr.inner or [])
+                self.executed_instructions += 1
+                if self.checkpoint_policy and self.checkpoint_policy.should_checkpoint(self):
+                    self.checkpoint()
                 continue
 
             if any(p == NTT_TAG and e == 4 for p, e in data):
@@ -113,6 +134,9 @@ class VM:
 
                     vec = _intt(_ntt(vec))
                 yield from VM().execute(inner)
+                self.executed_instructions += 1
+                if self.checkpoint_policy and self.checkpoint_policy.should_checkpoint(self):
+                    self.checkpoint()
                 continue
 
             exps = {e for _, e in data}
@@ -122,11 +146,17 @@ class VM:
                 if handler is None:
                     raise ValueError("Unknown opcode")
                 yield from handler(data)
+                self.executed_instructions += 1
+                if self.checkpoint_policy and self.checkpoint_policy.should_checkpoint(self):
+                    self.checkpoint()
             else:
                 p_chr = next((p for p, e in data if e in (2, 3)), None)
                 if p_chr is None:
                     raise ValueError("Bad data")
                 yield chr(_PRIME_IDX[p_chr])
+                self.executed_instructions += 1
+                if self.checkpoint_policy and self.checkpoint_policy.should_checkpoint(self):
+                    self.checkpoint()
 
     # ──────────────────────────────────────────────────────────────────
     # Opcode handlers
@@ -240,4 +270,8 @@ class VM:
         return iter(())
 
     def _op_thread_join(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        return iter(())
+
+    def _op_checkpoint(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        self.checkpoint()
         return iter(())

@@ -74,6 +74,8 @@ def assemble(text: str) -> List[int]:
             if arg is None:
                 raise ValueError("NTT requires length")
             result.append(chunks.chunk_ntt(int(arg)))
+        elif op == "CHECKPOINT":
+            result.append(chunks.chunk_checkpoint())
         else:
             raise ValueError(f"Unknown instruction: {op}")
 
