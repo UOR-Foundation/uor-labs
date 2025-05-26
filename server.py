@@ -1,13 +1,35 @@
 from __future__ import annotations
 
 from flask import Flask, jsonify, request
+import os
 
 import assembler
 import decoder
 from vm import VM
 from uor import async_llm_client, ipfs_storage
 
+WEB_DIR = os.path.join(os.path.dirname(__file__), 'web')
+
+
+def _load_page(name: str):
+    path = os.path.join(WEB_DIR, name)
+    try:
+        with open(path, 'r', encoding='utf-8') as fh:
+            return fh.read()
+    except OSError:
+        return 'Not Found', 404
+
 app = Flask(__name__)
+
+
+@app.get('/')
+def index_page():
+    return _load_page('index.html')
+
+
+@app.get('/web/<path:page>')
+def web_page(page: str):
+    return _load_page(page)
 
 
 @app.post('/assemble')
