@@ -23,4 +23,4 @@ class AppFactory:
         checked = await self.tester.run(code)
         chunks_list = assembler.assemble(checked)
         data = "\n".join(str(x) for x in chunks_list).encode("utf-8")
-        return ipfs_storage.add_data(data)
+        return await ipfs_storage.async_add_data(data)
