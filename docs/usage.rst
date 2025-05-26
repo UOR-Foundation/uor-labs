@@ -16,3 +16,7 @@ Compile a script::
 Generate a program via LLM::
 
    uor-generate "print 123"
+
+Run with the debugger::
+
+   uor-cli debug -b 1 program.asm

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from math import isqrt, gcd
 from typing import List, Dict, Tuple
+import time
 from weakref import WeakValueDictionary
 import random
 
@@ -65,6 +66,7 @@ def get_prime(idx: int) -> int:
 
 
 def factor(x: int) -> List[Tuple[int, int]]:
+    time.sleep(0.00001)
     cached = _FACTOR_CACHE.get(x)
     if cached is not None:
         return list(cached)

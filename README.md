@@ -74,9 +74,16 @@ behaviour.
 
 ## Debugging
 
-Use the `BRK` instruction to pause execution at a breakpoint and `TRACE`
-to log the top stack value during runtime. These opcodes make diagnosing
-complex programs easier.
+The `DebugVM` subclass provides interactive debugging features. Set
+breakpoints and watchpoints or trace every instruction using the
+`uor-cli debug` command.  The legacy `BRK` and `TRACE` opcodes still work
+inside programs and will emit ``BRK`` and the current stack value.
+
+Example:
+
+```bash
+uor-cli debug -b 2 -w 0 program.asm
+```
 
 
 ## Optional IPFS Support

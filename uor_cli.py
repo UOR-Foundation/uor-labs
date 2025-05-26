@@ -16,6 +16,7 @@ from uor import ipfs_storage, llm_client
 from uor.agents.factory import AppFactory
 
 from vm import VM
+from uor.debug import DebugVM
 from decoder import decode
 import chunks
 import assembler
@@ -52,6 +53,29 @@ def cmd_run(args: argparse.Namespace) -> int:
     else:
         chunks_list = assembler.assemble_file(args.source)
     vm = VM()
+    output = ''.join(vm.execute(decode(chunks_list)))
+    print(output)
+    return 0
+
+
+def cmd_debug(args: argparse.Namespace) -> int:
+    """Run a program under the DebugVM."""
+    if args.source is None:
+        text = sys.stdin.read()
+        chunks_list = assembler.assemble(text)
+    elif args.source.endswith('.uor'):
+        with open(args.source, 'r', encoding='utf-8') as fh:
+            chunks_list = [int(x) for x in fh.read().split() if x]
+    else:
+        chunks_list = assembler.assemble_file(args.source)
+
+    vm = DebugVM()
+    for bp in args.breakpoints:
+        vm.add_breakpoint(bp)
+    for wp in args.watchpoints:
+        vm.add_watchpoint(wp)
+    if args.trace:
+        vm.enable_tracing()
     output = ''.join(vm.execute(decode(chunks_list)))
     print(output)
     return 0
@@ -168,6 +192,13 @@ def build_parser() -> argparse.ArgumentParser:
     pr = sub.add_parser('run', help='assemble and run program')
     pr.add_argument('source', nargs='?', help='source .asm or encoded .uor file; reads assembly from stdin if omitted')
     pr.set_defaults(func=cmd_run)
+
+    pd = sub.add_parser('debug', help='run program with debugger')
+    pd.add_argument('source', nargs='?', help='assembly or .uor file, defaults to stdin')
+    pd.add_argument('-b', '--break', dest='breakpoints', action='append', type=int, default=[], help='set breakpoint at instruction index')
+    pd.add_argument('-w', '--watch', dest='watchpoints', action='append', type=int, default=[], help='watch memory address')
+    pd.add_argument('-t', '--trace', action='store_true', help='trace instructions')
+    pd.set_defaults(func=cmd_debug)
 
     pi = sub.add_parser('ipfs-add', help='assemble program and store via IPFS')
     pi.add_argument('source', nargs='?', help='assembly or .uor file, defaults to stdin')
