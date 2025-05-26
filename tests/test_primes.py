@@ -55,5 +55,30 @@ class FactorRegressionTest(unittest.TestCase):
         self.assertEqual(_FACTOR_CACHE, cache_snapshot)
 
 
+class SegmentedSieveTest(unittest.TestCase):
+    def setUp(self):
+        import primes
+        self.orig_primes = list(primes._PRIMES)
+        self.orig_idx = dict(primes._PRIME_IDX)
+        self.orig_limit = primes._sieve_limit
+        primes._PRIMES[:] = [2]
+        primes._PRIME_IDX.clear()
+        primes._PRIME_IDX[2] = 0
+        primes._sieve_limit = 2
+
+    def tearDown(self):
+        import primes
+        primes._PRIMES[:] = self.orig_primes
+        primes._PRIME_IDX.clear()
+        primes._PRIME_IDX.update(self.orig_idx)
+        primes._sieve_limit = self.orig_limit
+
+    def test_generator_yields_primes(self):
+        import primes
+        result = list(primes.segmented_sieve(20, segment_size=10))
+        self.assertEqual(result, [3, 5, 7, 11, 13, 17, 19])
+        self.assertEqual(primes._PRIMES, [2, 3, 5, 7, 11, 13, 17, 19])
+
+
 if __name__ == "__main__":
     unittest.main()
