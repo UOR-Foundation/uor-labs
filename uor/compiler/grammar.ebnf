@@ -1,0 +1,63 @@
+# Simple language grammar in Extended Backus-Naur Form
+# Supports variables, functions, control flow, operators and comments
+
+program        ::= { declaration } ;
+
+declaration    ::= var-decl
+                 | fun-decl
+                 | statement ;
+
+var-decl       ::= "var" identifier [ "=" expression ] ";" ;
+
+fun-decl       ::= "function" identifier "(" [ parameters ] ")" block ;
+
+parameters     ::= identifier { "," identifier } ;
+
+block          ::= "{" { declaration } "}" ;
+
+statement      ::= expr-stmt
+                 | if-stmt
+                 | while-stmt
+                 | return-stmt
+                 | block ;
+
+expr-stmt      ::= expression ";" ;
+
+if-stmt        ::= "if" "(" expression ")" statement [ "else" statement ] ;
+
+while-stmt     ::= "while" "(" expression ")" statement ;
+
+return-stmt    ::= "return" [ expression ] ";" ;
+
+expression     ::= assignment ;
+
+assignment     ::= identifier "=" assignment
+                 | logic-or ;
+
+logic-or       ::= logic-and { "||" logic-and } ;
+
+logic-and      ::= equality { "&&" equality } ;
+
+equality       ::= comparison { ( "==" | "!=" ) comparison } ;
+
+comparison     ::= term { ( "<" | "<=" | ">" | ">=" ) term } ;
+
+term           ::= factor { ( "+" | "-" ) factor } ;
+
+factor         ::= unary { ( "*" | "/" | "%" ) unary } ;
+
+unary          ::= ( "!" | "-" ) unary
+                 | primary ;
+
+primary        ::= number
+                 | string
+                 | identifier
+                 | "(" expression ")" ;
+
+# Lexical elements
+identifier     ::= IDENTIFIER ;
+number         ::= NUMBER ;
+string         ::= STRING ;
+
+COMMENT        ::= "//" {any-char} NEWLINE
+                 | "/*" {any-char} "*/" ;
