@@ -7,6 +7,7 @@ import time
 from uor.jit import JITCompiler, JITBlock
 from uor.profiler import VMProfiler
 from uor.memory import SegmentedMemory
+from uor.vm.coherence import CoherenceValidator
 from uor.exceptions import (
     DivisionByZeroError,
     MemoryAccessError,
@@ -41,7 +42,7 @@ from chunks import (
 
 
 class VM:
-    def __init__(self, profiler: Optional[VMProfiler] = None) -> None:
+    def __init__(self, profiler: Optional[VMProfiler] = None, coherence_validator: CoherenceValidator | None = None) -> None:
         self.stack: List[int] = []
         self.mem = SegmentedMemory(self)
         self.cs = self.mem.CODE_START
@@ -62,6 +63,7 @@ class VM:
         self.checkpoint_backend = None
         self.checkpoint_policy = None
         self.last_checkpoint_id: str | None = None
+        self.coherence_validator = coherence_validator
         self._program_len: int = 0
         self._dispatch = {
             OP_PUSH: self._op_push,
@@ -132,10 +134,16 @@ class VM:
             name = f"cp_{int(time.time()*1000)}"
             self.last_checkpoint_id = self.checkpoint_backend.save(name, payload)
 
+    def _check_coherence(self) -> None:
+        if self.coherence_validator:
+            self.coherence_validator.check(self)
+
     def execute(self, program: List[DecodedInstruction], resume: bool = False) -> Iterator[str]:
         if not resume:
             self.ip = 0
         self._program_len = len(program)
+        if self.coherence_validator:
+            self.coherence_validator.start(self)
         if self.profiler:
             self.profiler.reset()
         while True:
@@ -157,6 +165,7 @@ class VM:
                         self.profiler.record_instruction(ip_before, None, duration, cache_hit=True)
                     if self.checkpoint_policy and self.checkpoint_policy.should_checkpoint(self):
                         self.checkpoint()
+                    self._check_coherence()
                     continue
 
             instr = program[self.ip]
@@ -182,6 +191,7 @@ class VM:
                     self.profiler.record_instruction(ip_before, None, duration)
                 if self.checkpoint_policy and self.checkpoint_policy.should_checkpoint(self):
                     self.checkpoint()
+                self._check_coherence()
                 continue
 
             if any(p == NTT_TAG and e == 4 for p, e in data):
@@ -220,6 +230,7 @@ class VM:
                     self.profiler.record_instruction(ip_before, None, duration)
                 if self.checkpoint_policy and self.checkpoint_policy.should_checkpoint(self):
                     self.checkpoint()
+                self._check_coherence()
                 continue
 
             exps = {e for _, e in data}
@@ -236,6 +247,7 @@ class VM:
                     self.profiler.record_instruction(ip_before, op, duration)
                 if self.checkpoint_policy and self.checkpoint_policy.should_checkpoint(self):
                     self.checkpoint()
+                self._check_coherence()
             else:
                 p_chr = next((p for p, e in data if e in (2, 3)), None)
                 if p_chr is None:
@@ -248,6 +260,7 @@ class VM:
                     self.profiler.record_instruction(ip_before, None, duration)
                 if self.checkpoint_policy and self.checkpoint_policy.should_checkpoint(self):
                     self.checkpoint()
+            self._check_coherence()
 
     # ──────────────────────────────────────────────────────────────────
     # Opcode handlers
