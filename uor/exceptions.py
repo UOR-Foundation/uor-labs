@@ -23,3 +23,9 @@ class InvalidOpcodeError(UORException):
 
 class ChecksumError(UORException):
     """Raised when an instruction checksum is invalid."""
+
+class StackUnderflowError(UORException):
+    """Raised when popping from an empty stack."""
+
+class SegmentationFaultError(UORException):
+    """Raised when the instruction pointer becomes invalid."""
