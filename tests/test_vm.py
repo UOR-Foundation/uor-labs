@@ -9,6 +9,8 @@ from uor.exceptions import (
     MemoryAccessError,
     InvalidOpcodeError,
     StackOverflowError,
+    StackUnderflowError,
+    SegmentationFaultError,
 )
 
 
@@ -71,6 +73,18 @@ class VMTest(unittest.TestCase):
                 list(VM().execute(decode(prog)))
         finally:
             SegmentedMemory.STACK_SIZE = old
+
+    def test_stack_underflow(self):
+        prog = [chunks.chunk_add()]
+        with self.assertRaises(StackUnderflowError) as cm:
+            list(VM().execute(decode(prog)))
+        self.assertEqual(cm.exception.ip, 0)
+
+    def test_segmentation_fault(self):
+        prog = [chunks.chunk_jmp(-2)]
+        with self.assertRaises(SegmentationFaultError) as cm:
+            list(VM().execute(decode(prog)))
+        self.assertEqual(cm.exception.ip, -1)
 
 
 if __name__ == '__main__':

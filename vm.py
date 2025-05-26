@@ -11,6 +11,8 @@ from uor.exceptions import (
     DivisionByZeroError,
     MemoryAccessError,
     StackOverflowError,
+    StackUnderflowError,
+    SegmentationFaultError,
     InvalidOpcodeError,
 )
 
@@ -102,6 +104,20 @@ class VM:
             OP_CHECKPOINT: self._op_checkpoint,
         }
 
+    def _pop(self) -> int:
+        """Pop a single value from the stack with underflow check."""
+        if not self.stack:
+            raise StackUnderflowError("Stack underflow", self.ip - 1)
+        return self.stack.pop()
+
+    def _pop_two(self) -> Tuple[int, int]:
+        """Pop two values from the stack with underflow check."""
+        if len(self.stack) < 2:
+            raise StackUnderflowError("Stack underflow", self.ip - 1)
+        b = self.stack.pop()
+        a = self.stack.pop()
+        return a, b
+
     def checkpoint(self) -> None:
         if self.checkpoint_backend is not None:
             import uor.vm.checkpoint as cp
@@ -115,7 +131,11 @@ class VM:
         self._program_len = len(program)
         if self.profiler:
             self.profiler.reset()
-        while self.ip < len(program):
+        while True:
+            if self.ip == len(program):
+                break
+            if self.ip < 0 or self.ip > len(program):
+                raise SegmentationFaultError("Instruction pointer out of range", self.ip)
             ip_before = self.ip
             if self._jit.available and self.ip in self._compiled:
                 start_t = time.perf_counter()
@@ -230,7 +250,7 @@ class VM:
         return iter(())
 
     def _binary_op(self, func) -> None:
-        b, a = self.stack.pop(), self.stack.pop()
+        a, b = self._pop_two()
         self.stack.append(func(a, b))
 
     def _op_add(self, data: List[Tuple[int, int]]) -> Iterator[str]:
@@ -259,7 +279,7 @@ class VM:
     def _op_store(self, data: List[Tuple[int, int]]) -> Iterator[str]:
         addr_p = next(p for p, e in data if e == 5)
         addr = _PRIME_IDX[addr_p]
-        val = self.stack.pop()
+        val = self._pop()
         try:
             self.mem.store(addr, val)
         except MemoryError as exc:
@@ -277,7 +297,7 @@ class VM:
     def _op_jz(self, data: List[Tuple[int, int]]) -> Iterator[str]:
         sign = -1 if any(p == NEG_FLAG and e == 5 for p, e in data) else 1
         off = next(p for p, e in data if e == 5 and p != NEG_FLAG)
-        val = self.stack.pop()
+        val = self._pop()
         if val == 0:
             self.ip += sign * _PRIME_IDX[off]
         return iter(())
@@ -285,13 +305,13 @@ class VM:
     def _op_jnz(self, data: List[Tuple[int, int]]) -> Iterator[str]:
         sign = -1 if any(p == NEG_FLAG and e == 5 for p, e in data) else 1
         off = next(p for p, e in data if e == 5 and p != NEG_FLAG)
-        val = self.stack.pop()
+        val = self._pop()
         if val != 0:
             self.ip += sign * _PRIME_IDX[off]
         return iter(())
 
     def _op_print(self, data: List[Tuple[int, int]]) -> Iterator[str]:
-        yield str(self.stack.pop())
+        yield str(self._pop())
 
     # ------------------------------------------------------------------
     # Extended opcode handlers
@@ -335,7 +355,7 @@ class VM:
     def _op_output(self, data: List[Tuple[int, int]]) -> Iterator[str]:
         if self.profiler:
             self.profiler.record_io()
-        val = self.stack.pop()
+        val = self._pop()
         self.io_out.append(val)
         yield str(val)
 
@@ -368,16 +388,14 @@ class VM:
     # ------------------------------------------------------------------
 
     def _op_div(self, data: List[Tuple[int, int]]) -> Iterator[str]:
-        b = self.stack.pop()
-        a = self.stack.pop()
+        a, b = self._pop_two()
         if b == 0:
             raise DivisionByZeroError("Division by zero", self.ip - 1)
         self.stack.append(a // b)
         return iter(())
 
     def _op_mod(self, data: List[Tuple[int, int]]) -> Iterator[str]:
-        b = self.stack.pop()
-        a = self.stack.pop()
+        a, b = self._pop_two()
         if b == 0:
             raise DivisionByZeroError("Modulo by zero", self.ip - 1)
         self.stack.append(a % b)
@@ -404,28 +422,32 @@ class VM:
         return iter(())
 
     def _op_neg(self, data: List[Tuple[int, int]]) -> Iterator[str]:
-        v = self.stack.pop()
+        v = self._pop()
         self.stack.append(-v)
         return iter(())
 
     def _op_fmul(self, data: List[Tuple[int, int]]) -> Iterator[str]:
-        b, a = float(self.stack.pop()), float(self.stack.pop())
+        a, b = self._pop_two()
+        a = float(a)
+        b = float(b)
         self.stack.append(a * b)
         return iter(())
 
     def _op_fdiv(self, data: List[Tuple[int, int]]) -> Iterator[str]:
-        b, a = float(self.stack.pop()), float(self.stack.pop())
+        a, b = self._pop_two()
+        a = float(a)
+        b = float(b)
         if b == 0:
             raise DivisionByZeroError("Float division by zero", self.ip - 1)
         self.stack.append(a / b)
         return iter(())
 
     def _op_f2i(self, data: List[Tuple[int, int]]) -> Iterator[str]:
-        self.stack.append(int(self.stack.pop()))
+        self.stack.append(int(self._pop()))
         return iter(())
 
     def _op_i2f(self, data: List[Tuple[int, int]]) -> Iterator[str]:
-        self.stack.append(float(self.stack.pop()))
+        self.stack.append(float(self._pop()))
         return iter(())
 
     def _op_syscall(self, data: List[Tuple[int, int]]) -> Iterator[str]:
@@ -446,19 +468,19 @@ class VM:
     def _op_hash(self, data: List[Tuple[int, int]]) -> Iterator[str]:
         import hashlib
 
-        v = self.stack.pop()
+        v = self._pop()
         h = hashlib.sha256(str(v).encode()).digest()
         self.stack.append(int.from_bytes(h[:4], "big"))
         return iter(())
 
     def _op_sign(self, data: List[Tuple[int, int]]) -> Iterator[str]:
-        v = self.stack.pop()
+        v = self._pop()
         self.stack.append(v + 1)
         return iter(())
 
     def _op_verify(self, data: List[Tuple[int, int]]) -> Iterator[str]:
-        v = self.stack.pop()
-        sig = self.stack.pop()
+        v = self._pop()
+        sig = self._pop()
         self.stack.append(1 if sig == v + 1 else 0)
         return iter(())
 
