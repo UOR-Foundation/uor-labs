@@ -9,7 +9,7 @@ from primes import get_prime, _PRIME_IDX
 from primes import _PRIMES
 from primes import _extend_primes_to
 
-_extend_primes_to(52)
+_extend_primes_to(54)
 OP_PUSH, OP_ADD, OP_PRINT = _PRIMES[0], _PRIMES[1], _PRIMES[2]
 OP_SUB, OP_MUL = _PRIMES[6], _PRIMES[7]
 OP_LOAD, OP_STORE = _PRIMES[8], _PRIMES[9]
@@ -31,6 +31,7 @@ OP_SYSCALL, OP_INT, OP_HALT = _PRIMES[43], _PRIMES[44], _PRIMES[45]
 OP_NOP, OP_HASH, OP_SIGN = _PRIMES[46], _PRIMES[47], _PRIMES[48]
 OP_VERIFY, OP_RNG, OP_BRK = _PRIMES[49], _PRIMES[50], _PRIMES[51]
 OP_TRACE = _PRIMES[52]
+OP_DEBUG, OP_ATOMIC = _PRIMES[53], _PRIMES[54]
 BLOCK_TAG, NTT_TAG, T_MOD = _PRIMES[3], _PRIMES[4], _PRIMES[5]
 NTT_ROOT = 2
 
@@ -306,3 +307,11 @@ def chunk_brk() -> int:
 
 def chunk_trace() -> int:
     return _attach_checksum(OP_TRACE ** 4, [(OP_TRACE, 4)])
+
+
+def chunk_debug() -> int:
+    return _attach_checksum(OP_DEBUG ** 4, [(OP_DEBUG, 4)])
+
+
+def chunk_atomic() -> int:
+    return _attach_checksum(OP_ATOMIC ** 4, [(OP_ATOMIC, 4)])
