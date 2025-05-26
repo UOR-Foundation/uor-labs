@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head><title>Generate Program</title></head>
+<body>
+<h1>Generate Program</h1>
+<input id="prompt" size="60"><br>
+<select id="provider">
+  <option value="openai">openai</option>
+  <option value="anthropic">anthropic</option>
+  <option value="google">google</option>
+</select>
+<button id="generate">Generate</button>
+<pre id="result"></pre>
+<script>
+document.getElementById('generate').onclick = async function() {
+    const prompt = document.getElementById('prompt').value;
+    const provider = document.getElementById('provider').value;
+    const resp = await fetch('/generate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({prompt: prompt, provider: provider})
+    });
+    const data = await resp.json();
+    document.getElementById('result').textContent = JSON.stringify(data);
+};
+</script>
+</body>
+</html>

@@ -32,11 +32,30 @@ class Flask:
             self.routes[path] = func
             return func
         return decorator
+    def get(self, path):
+        def decorator(func):
+            self.routes[path] = func
+            return func
+        return decorator
     def test_client(self):
         app = self
         class Client:
             def post(self, path, json=None):
                 request.json_data = json
+                result = app.routes[path]()
+                if asyncio.iscoroutine(result):
+                    rv = asyncio.run(result)
+                else:
+                    rv = result
+                if isinstance(rv, tuple):
+                    data, status = rv
+                else:
+                    data, status = rv, 200
+                if isinstance(data, _Response):
+                    return data
+                return _Response(data, status)
+            def get(self, path):
+                request.json_data = None
                 result = app.routes[path]()
                 if asyncio.iscoroutine(result):
                     rv = asyncio.run(result)
