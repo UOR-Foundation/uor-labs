@@ -23,7 +23,7 @@ def assemble(text: str) -> List[int]:
         op = parts[0].upper()
         arg = parts[1] if len(parts) > 1 else None
         instructions.append((op, arg))
-        if op in {"JMP", "JZ", "JNZ"} and arg and not arg.lstrip("-+").isdigit():
+        if op in {"JMP", "JZ", "JNZ", "CALL"} and arg and not arg.lstrip("-+").isdigit():
             pending.append((len(instructions) - 1, arg))
 
     for idx, label in pending:
@@ -110,6 +110,32 @@ def assemble(text: str) -> List[int]:
             if arg is None:
                 raise ValueError("JNZ requires offset")
             result.append(chunks.chunk_jnz(int(arg)))
+        elif op == "CALL":
+            if arg is None:
+                raise ValueError("CALL requires offset")
+            result.append(chunks.chunk_call(int(arg)))
+        elif op == "RET":
+            result.append(chunks.chunk_ret())
+        elif op == "ALLOC":
+            if arg is None:
+                raise ValueError("ALLOC requires size")
+            result.append(chunks.chunk_alloc(int(arg)))
+        elif op == "FREE":
+            if arg is None:
+                raise ValueError("FREE requires address")
+            result.append(chunks.chunk_free(int(arg)))
+        elif op == "INPUT":
+            result.append(chunks.chunk_input())
+        elif op == "OUTPUT":
+            result.append(chunks.chunk_output())
+        elif op == "NET_SEND":
+            result.append(chunks.chunk_net_send())
+        elif op == "NET_RECV":
+            result.append(chunks.chunk_net_recv())
+        elif op == "THREAD_START":
+            result.append(chunks.chunk_thread_start())
+        elif op == "THREAD_JOIN":
+            result.append(chunks.chunk_thread_join())
         elif op == "BLOCK":
             if arg is None:
                 raise ValueError("BLOCK requires length")
