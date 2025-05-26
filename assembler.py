@@ -74,6 +74,22 @@ def assemble(text: str) -> List[int]:
             if arg is None:
                 raise ValueError("NTT requires length")
             result.append(chunks.chunk_ntt(int(arg)))
+        elif op == "UN_CREATE":
+            if arg is None:
+                raise ValueError("UN_CREATE requires value")
+            result.append(chunks.chunk_un_create(int(arg)))
+        elif op == "UN_GRADE":
+            if arg is None:
+                raise ValueError("UN_GRADE requires value")
+            result.append(chunks.chunk_un_grade(int(arg)))
+        elif op == "UN_INNER":
+            result.append(chunks.chunk_un_inner())
+        elif op == "UN_NORM":
+            result.append(chunks.chunk_un_norm())
+        elif op == "UN_TRANS":
+            result.append(chunks.chunk_un_trans())
+        elif op == "UN_DWT":
+            result.append(chunks.chunk_un_dwt())
         elif op == "CHECKPOINT":
             result.append(chunks.chunk_checkpoint())
         else:

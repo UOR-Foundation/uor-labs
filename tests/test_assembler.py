@@ -64,6 +64,19 @@ class AssemblerTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             assembler.assemble("FOO 1")
 
+    def test_universal_number_opcodes(self):
+        cases = [
+            ("UN_CREATE 4", chunks.chunk_un_create(4)),
+            ("UN_GRADE 2", chunks.chunk_un_grade(2)),
+            ("UN_INNER", chunks.chunk_un_inner()),
+            ("UN_NORM", chunks.chunk_un_norm()),
+            ("UN_TRANS", chunks.chunk_un_trans()),
+            ("UN_DWT", chunks.chunk_un_dwt()),
+        ]
+        for asm, expected in cases:
+            with self.subTest(op=asm):
+                self.assertEqual(assembler.assemble(asm), [expected])
+
 
 if __name__ == '__main__':
     unittest.main()
