@@ -1,14 +1,9 @@
 import io
-import os
 import contextlib
-import importlib.util
 import unittest
 from unittest import mock
 
-# Load the CLI module since its filename contains a dash
-spec = importlib.util.spec_from_file_location('uor_cli', os.path.join(os.path.dirname(__file__), '..', 'uor-cli.py'))
-uor_cli = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(uor_cli)
+import uor_cli
 
 import assembler
 
