@@ -5,7 +5,7 @@ from typing import List, Iterator, Tuple, Optional, Dict
 import time
 
 from uor.jit import JITCompiler, JITBlock
-from uor.vm import Profiler
+from uor.profiler import VMProfiler
 from uor.memory import SegmentedMemory
 from uor.exceptions import (
     DivisionByZeroError,
@@ -39,7 +39,7 @@ from chunks import (
 
 
 class VM:
-    def __init__(self, profiler: Optional[Profiler] = None) -> None:
+    def __init__(self, profiler: Optional[VMProfiler] = None) -> None:
         self.stack: List[int] = []
         self.mem = SegmentedMemory(self)
         self.ip: int = 0
@@ -113,12 +113,17 @@ class VM:
         if not resume:
             self.ip = 0
         self._program_len = len(program)
+        if self.profiler:
+            self.profiler.reset()
         while self.ip < len(program):
+            ip_before = self.ip
             if self._jit.available and self.ip in self._compiled:
+                start_t = time.perf_counter()
                 yield from self._compiled[self.ip](self)
+                duration = time.perf_counter() - start_t
                 self.executed_instructions += 1
                 if self.profiler:
-                    self.profiler.record_instruction(self, cache_hit=True)
+                    self.profiler.record_instruction(ip_before, None, duration, cache_hit=True)
                 if self.checkpoint_policy and self.checkpoint_policy.should_checkpoint(self):
                     self.checkpoint()
                 continue
@@ -138,10 +143,12 @@ class VM:
             data = instr.data
 
             if any(p == BLOCK_TAG and e == 7 for p, e in data):
+                start_t = time.perf_counter()
                 yield from VM().execute(instr.inner or [])
+                duration = time.perf_counter() - start_t
                 self.executed_instructions += 1
                 if self.profiler:
-                    self.profiler.record_instruction(self)
+                    self.profiler.record_instruction(ip_before, None, duration)
                 if self.checkpoint_policy and self.checkpoint_policy.should_checkpoint(self):
                     self.checkpoint()
                 continue
@@ -174,10 +181,12 @@ class VM:
                         return res
 
                     vec = _intt(_ntt(vec))
+                start_t = time.perf_counter()
                 yield from VM().execute(inner)
+                duration = time.perf_counter() - start_t
                 self.executed_instructions += 1
                 if self.profiler:
-                    self.profiler.record_instruction(self)
+                    self.profiler.record_instruction(ip_before, None, duration)
                 if self.checkpoint_policy and self.checkpoint_policy.should_checkpoint(self):
                     self.checkpoint()
                 continue
@@ -188,20 +197,24 @@ class VM:
                 handler = self._dispatch.get(op)
                 if handler is None:
                     raise InvalidOpcodeError("Unknown opcode", self.ip - 1)
+                start_t = time.perf_counter()
                 yield from handler(data)
+                duration = time.perf_counter() - start_t
                 self.executed_instructions += 1
                 if self.profiler:
-                    self.profiler.record_instruction(self)
+                    self.profiler.record_instruction(ip_before, op, duration)
                 if self.checkpoint_policy and self.checkpoint_policy.should_checkpoint(self):
                     self.checkpoint()
             else:
                 p_chr = next((p for p, e in data if e in (2, 3)), None)
                 if p_chr is None:
                     raise ValueError("Bad data")
+                start_t = time.perf_counter()
                 yield chr(_PRIME_IDX[p_chr])
+                duration = time.perf_counter() - start_t
                 self.executed_instructions += 1
                 if self.profiler:
-                    self.profiler.record_instruction(self)
+                    self.profiler.record_instruction(ip_before, None, duration)
                 if self.checkpoint_policy and self.checkpoint_policy.should_checkpoint(self):
                     self.checkpoint()
 
@@ -239,6 +252,8 @@ class VM:
             self.stack.append(self.mem.load(addr))
         except MemoryError as exc:
             raise MemoryAccessError(str(exc), self.ip - 1) from None
+        if self.profiler:
+            self.profiler.record_memory_access(addr, "read")
         return iter(())
 
     def _op_store(self, data: List[Tuple[int, int]]) -> Iterator[str]:
@@ -249,6 +264,8 @@ class VM:
             self.mem.store(addr, val)
         except MemoryError as exc:
             raise MemoryAccessError(str(exc), self.ip - 1) from None
+        if self.profiler:
+            self.profiler.record_memory_access(addr, "write")
         return iter(())
 
     def _op_jmp(self, data: List[Tuple[int, int]]) -> Iterator[str]:
