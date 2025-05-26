@@ -2,6 +2,7 @@ import unittest
 from unittest import mock
 import types
 import sys
+import asyncio
 
 # Provide minimal Flask stub
 fake_flask = types.ModuleType('flask')
@@ -36,7 +37,11 @@ class Flask:
         class Client:
             def post(self, path, json=None):
                 request.json_data = json
-                rv = app.routes[path]()
+                result = app.routes[path]()
+                if asyncio.iscoroutine(result):
+                    rv = asyncio.run(result)
+                else:
+                    rv = result
                 if isinstance(rv, tuple):
                     data, status = rv
                 else:
@@ -80,8 +85,8 @@ class APIServerTest(unittest.TestCase):
         self.assertEqual(resp.get_json(), {'output': '3'})
 
     def test_generate(self):
-        with mock.patch('uor.llm_client.call_model', return_value='PUSH 1\nPRINT') as call, \
-             mock.patch('uor.ipfs_storage.add_data', return_value='CID') as add:
+        with mock.patch('uor.async_llm_client.async_call_model', new=mock.AsyncMock(return_value='PUSH 1\nPRINT')) as call, \
+             mock.patch('uor.ipfs_storage.async_add_data', new=mock.AsyncMock(return_value='CID')) as add:
             resp = self.client.post('/generate', json={'prompt': 'hi', 'provider': 'openai'})
             self.assertEqual(resp.status_code, 200)
             self.assertEqual(resp.get_json(), {'cid': 'CID'})

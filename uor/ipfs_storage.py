@@ -1,6 +1,8 @@
 """Utility helpers for storing programs in IPFS."""
 from __future__ import annotations
 
+import asyncio
+
 try:
     import ipfshttpclient  # type: ignore
 except ModuleNotFoundError:  # pragma: no cover - optional dependency not installed
@@ -30,3 +32,13 @@ def get_data(cid: str) -> bytes:
             return client.cat(cid)
     except Exception as exc:
         raise RuntimeError("Failed to fetch data from IPFS") from exc
+
+
+async def async_add_data(data: bytes) -> str:
+    """Asynchronously add ``data`` to IPFS and return its CID."""
+    return await asyncio.to_thread(add_data, data)
+
+
+async def async_get_data(cid: str) -> bytes:
+    """Asynchronously retrieve data from IPFS by ``cid``."""
+    return await asyncio.to_thread(get_data, cid)

@@ -21,7 +21,7 @@ class AppFactoryTest(unittest.TestCase):
         factory.tester = tester
 
         with mock.patch('assembler.assemble', return_value=[1]), \
-             mock.patch('uor.ipfs_storage.add_data', return_value='CID') as add:
+             mock.patch('uor.ipfs_storage.async_add_data', new=mock.AsyncMock(return_value='CID')) as add:
             cid = asyncio.run(factory.build_app('goal'))
 
         self.assertEqual(cid, 'CID')
