@@ -29,3 +29,6 @@ class StackUnderflowError(UORException):
 
 class SegmentationFaultError(UORException):
     """Raised when the instruction pointer becomes invalid."""
+
+class CoherenceViolationError(UORException):
+    """Raised when coherence drift exceeds tolerance."""
