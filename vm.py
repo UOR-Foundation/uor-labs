@@ -1,11 +1,12 @@
 """Virtual machine implementation."""
 from __future__ import annotations
 
-from typing import List, Dict, Iterator, Tuple, Optional
+from typing import List, Iterator, Tuple, Optional, Dict
 import time
 
 from uor.jit import JITCompiler, JITBlock
 from uor.vm import Profiler
+from uor.memory import SegmentedMemory
 
 from decoder import DecodedInstruction
 
@@ -30,11 +31,11 @@ from chunks import (
 class VM:
     def __init__(self, profiler: Optional[Profiler] = None) -> None:
         self.stack: List[int] = []
-        self.mem: Dict[int, int] = {}
+        self.mem = SegmentedMemory(self)
         self.ip: int = 0
         self.call_stack: List[int] = []
-        self.heap_ptr: int = 0
         self.io_in: List[int] = []
+        self.io_out: List[int] = []
         self._counter: Dict[int, int] = {}
         self._compiled: Dict[int, JITBlock] = {}
         self.jit_threshold: int = 100
@@ -71,7 +72,7 @@ class VM:
     def checkpoint(self) -> None:
         if self.checkpoint_backend is not None:
             import uor.vm.checkpoint as cp
-            payload = cp.serialize_state(self.stack, self.mem, self.ip)
+            payload = cp.serialize_state(self.stack, self.mem.dump(), self.ip)
             name = f"cp_{int(time.time()*1000)}"
             self.last_checkpoint_id = self.checkpoint_backend.save(name, payload)
 
@@ -196,14 +197,16 @@ class VM:
         return iter(())
 
     def _op_load(self, data: List[Tuple[int, int]]) -> Iterator[str]:
-        addr = next(p for p, e in data if e == 5)
-        self.stack.append(self.mem.get(_PRIME_IDX[addr], 0))
+        addr_p = next(p for p, e in data if e == 5)
+        addr = _PRIME_IDX[addr_p]
+        self.stack.append(self.mem.load(addr))
         return iter(())
 
     def _op_store(self, data: List[Tuple[int, int]]) -> Iterator[str]:
-        addr = next(p for p, e in data if e == 5)
+        addr_p = next(p for p, e in data if e == 5)
+        addr = _PRIME_IDX[addr_p]
         val = self.stack.pop()
-        self.mem[_PRIME_IDX[addr]] = val
+        self.mem.store(addr, val)
         return iter(())
 
     def _op_jmp(self, data: List[Tuple[int, int]]) -> Iterator[str]:
@@ -250,17 +253,14 @@ class VM:
     def _op_alloc(self, data: List[Tuple[int, int]]) -> Iterator[str]:
         size_p = next(p for p, e in data if e == 5)
         size = _PRIME_IDX[size_p]
-        addr = self.heap_ptr
-        self.heap_ptr += size
-        for i in range(size):
-            self.mem[addr + i] = 0
+        addr = self.mem.allocate(size)
         self.stack.append(addr)
         return iter(())
 
     def _op_free(self, data: List[Tuple[int, int]]) -> Iterator[str]:
         addr_p = next(p for p, e in data if e == 5)
         addr = _PRIME_IDX[addr_p]
-        self.mem.pop(addr, None)
+        self.mem.free(addr)
         return iter(())
 
     def _op_input(self, data: List[Tuple[int, int]]) -> Iterator[str]:
@@ -273,7 +273,9 @@ class VM:
     def _op_output(self, data: List[Tuple[int, int]]) -> Iterator[str]:
         if self.profiler:
             self.profiler.record_io()
-        yield str(self.stack.pop())
+        val = self.stack.pop()
+        self.io_out.append(val)
+        yield str(val)
 
     def _op_net_send(self, data: List[Tuple[int, int]]) -> Iterator[str]:
         start = time.time()
