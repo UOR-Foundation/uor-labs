@@ -36,6 +36,7 @@ packages = [
     "uor",
     "uor.agents",
     "uor.compiler",
+    "uor.uscript",
     "uor.jit",
     "uor.llm",
     "uor.vm",
