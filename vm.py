@@ -21,6 +21,10 @@ from chunks import (
     OP_NET_SEND, OP_NET_RECV,
     OP_THREAD_START, OP_THREAD_JOIN,
     OP_CHECKPOINT,
+    OP_DIV, OP_MOD, OP_AND, OP_OR, OP_XOR, OP_SHL, OP_SHR, OP_NEG,
+    OP_FMUL, OP_FDIV, OP_F2I, OP_I2F,
+    OP_SYSCALL, OP_INT, OP_HALT, OP_NOP,
+    OP_HASH, OP_SIGN, OP_VERIFY, OP_RNG, OP_BRK, OP_TRACE,
     NEG_FLAG,
     BLOCK_TAG, NTT_TAG, T_MOD,
     NTT_ROOT,
@@ -44,6 +48,7 @@ class VM:
         self.checkpoint_backend = None
         self.checkpoint_policy = None
         self.last_checkpoint_id: str | None = None
+        self._program_len: int = 0
         self._dispatch = {
             OP_PUSH: self._op_push,
             OP_ADD: self._op_add,
@@ -59,6 +64,28 @@ class VM:
             OP_RET: self._op_ret,
             OP_ALLOC: self._op_alloc,
             OP_FREE: self._op_free,
+            OP_DIV: self._op_div,
+            OP_MOD: self._op_mod,
+            OP_AND: self._op_and,
+            OP_OR: self._op_or,
+            OP_XOR: self._op_xor,
+            OP_SHL: self._op_shl,
+            OP_SHR: self._op_shr,
+            OP_NEG: self._op_neg,
+            OP_FMUL: self._op_fmul,
+            OP_FDIV: self._op_fdiv,
+            OP_F2I: self._op_f2i,
+            OP_I2F: self._op_i2f,
+            OP_SYSCALL: self._op_syscall,
+            OP_INT: self._op_int,
+            OP_HALT: self._op_halt,
+            OP_NOP: self._op_nop,
+            OP_HASH: self._op_hash,
+            OP_SIGN: self._op_sign,
+            OP_VERIFY: self._op_verify,
+            OP_RNG: self._op_rng,
+            OP_BRK: self._op_brk,
+            OP_TRACE: self._op_trace,
             OP_INPUT: self._op_input,
             OP_OUTPUT: self._op_output,
             OP_NET_SEND: self._op_net_send,
@@ -78,6 +105,7 @@ class VM:
     def execute(self, program: List[DecodedInstruction], resume: bool = False) -> Iterator[str]:
         if not resume:
             self.ip = 0
+        self._program_len = len(program)
         while self.ip < len(program):
             if self._jit.available and self.ip in self._compiled:
                 yield from self._compiled[self.ip](self)
@@ -298,3 +326,103 @@ class VM:
     def _op_checkpoint(self, data: List[Tuple[int, int]]) -> Iterator[str]:
         self.checkpoint()
         return iter(())
+
+    # ------------------------------------------------------------------
+    # New opcode handlers
+    # ------------------------------------------------------------------
+
+    def _op_div(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        self._binary_op(lambda a, b: a // b)
+        return iter(())
+
+    def _op_mod(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        self._binary_op(lambda a, b: a % b)
+        return iter(())
+
+    def _op_and(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        self._binary_op(lambda a, b: a & b)
+        return iter(())
+
+    def _op_or(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        self._binary_op(lambda a, b: a | b)
+        return iter(())
+
+    def _op_xor(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        self._binary_op(lambda a, b: a ^ b)
+        return iter(())
+
+    def _op_shl(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        self._binary_op(lambda a, b: a << b)
+        return iter(())
+
+    def _op_shr(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        self._binary_op(lambda a, b: a >> b)
+        return iter(())
+
+    def _op_neg(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        v = self.stack.pop()
+        self.stack.append(-v)
+        return iter(())
+
+    def _op_fmul(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        b, a = float(self.stack.pop()), float(self.stack.pop())
+        self.stack.append(a * b)
+        return iter(())
+
+    def _op_fdiv(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        b, a = float(self.stack.pop()), float(self.stack.pop())
+        self.stack.append(a / b)
+        return iter(())
+
+    def _op_f2i(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        self.stack.append(int(self.stack.pop()))
+        return iter(())
+
+    def _op_i2f(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        self.stack.append(float(self.stack.pop()))
+        return iter(())
+
+    def _op_syscall(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        self.stack.append(0)
+        return iter(())
+
+    def _op_int(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        self.stack.append(0)
+        return iter(())
+
+    def _op_halt(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        self.ip = self._program_len
+        return iter(())
+
+    def _op_nop(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        return iter(())
+
+    def _op_hash(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        import hashlib
+
+        v = self.stack.pop()
+        h = hashlib.sha256(str(v).encode()).digest()
+        self.stack.append(int.from_bytes(h[:4], "big"))
+        return iter(())
+
+    def _op_sign(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        v = self.stack.pop()
+        self.stack.append(v + 1)
+        return iter(())
+
+    def _op_verify(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        v = self.stack.pop()
+        sig = self.stack.pop()
+        self.stack.append(1 if sig == v + 1 else 0)
+        return iter(())
+
+    def _op_rng(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        self.stack.append(4)
+        return iter(())
+
+    def _op_brk(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        yield "BRK"
+
+    def _op_trace(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        yield str(self.stack[-1] if self.stack else 0)
+

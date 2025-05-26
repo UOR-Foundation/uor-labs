@@ -9,7 +9,7 @@ from primes import get_prime, _PRIME_IDX
 from primes import _PRIMES
 from primes import _extend_primes_to
 
-_extend_primes_to(30)
+_extend_primes_to(52)
 OP_PUSH, OP_ADD, OP_PRINT = _PRIMES[0], _PRIMES[1], _PRIMES[2]
 OP_SUB, OP_MUL = _PRIMES[6], _PRIMES[7]
 OP_LOAD, OP_STORE = _PRIMES[8], _PRIMES[9]
@@ -23,6 +23,14 @@ OP_THREAD_START, OP_THREAD_JOIN = _PRIMES[22], _PRIMES[23]
 OP_CHECKPOINT = _PRIMES[24]
 OP_UN_CREATE, OP_UN_GRADE, OP_UN_INNER = _PRIMES[25], _PRIMES[26], _PRIMES[27]
 OP_UN_NORM, OP_UN_TRANS, OP_UN_DWT = _PRIMES[28], _PRIMES[29], _PRIMES[30]
+OP_DIV, OP_MOD, OP_AND = _PRIMES[31], _PRIMES[32], _PRIMES[33]
+OP_OR, OP_XOR, OP_SHL = _PRIMES[34], _PRIMES[35], _PRIMES[36]
+OP_SHR, OP_NEG, OP_FMUL = _PRIMES[37], _PRIMES[38], _PRIMES[39]
+OP_FDIV, OP_F2I, OP_I2F = _PRIMES[40], _PRIMES[41], _PRIMES[42]
+OP_SYSCALL, OP_INT, OP_HALT = _PRIMES[43], _PRIMES[44], _PRIMES[45]
+OP_NOP, OP_HASH, OP_SIGN = _PRIMES[46], _PRIMES[47], _PRIMES[48]
+OP_VERIFY, OP_RNG, OP_BRK = _PRIMES[49], _PRIMES[50], _PRIMES[51]
+OP_TRACE = _PRIMES[52]
 BLOCK_TAG, NTT_TAG, T_MOD = _PRIMES[3], _PRIMES[4], _PRIMES[5]
 NTT_ROOT = 2
 
@@ -210,3 +218,91 @@ def chunk_un_trans() -> int:
 
 def chunk_un_dwt() -> int:
     return _attach_checksum(OP_UN_DWT ** 4, [(OP_UN_DWT, 4)])
+
+
+def chunk_div() -> int:
+    return _attach_checksum(OP_DIV ** 4, [(OP_DIV, 4)])
+
+
+def chunk_mod() -> int:
+    return _attach_checksum(OP_MOD ** 4, [(OP_MOD, 4)])
+
+
+def chunk_and() -> int:
+    return _attach_checksum(OP_AND ** 4, [(OP_AND, 4)])
+
+
+def chunk_or() -> int:
+    return _attach_checksum(OP_OR ** 4, [(OP_OR, 4)])
+
+
+def chunk_xor() -> int:
+    return _attach_checksum(OP_XOR ** 4, [(OP_XOR, 4)])
+
+
+def chunk_shl() -> int:
+    return _attach_checksum(OP_SHL ** 4, [(OP_SHL, 4)])
+
+
+def chunk_shr() -> int:
+    return _attach_checksum(OP_SHR ** 4, [(OP_SHR, 4)])
+
+
+def chunk_neg() -> int:
+    return _attach_checksum(OP_NEG ** 4, [(OP_NEG, 4)])
+
+
+def chunk_fmul() -> int:
+    return _attach_checksum(OP_FMUL ** 4, [(OP_FMUL, 4)])
+
+
+def chunk_fdiv() -> int:
+    return _attach_checksum(OP_FDIV ** 4, [(OP_FDIV, 4)])
+
+
+def chunk_f2i() -> int:
+    return _attach_checksum(OP_F2I ** 4, [(OP_F2I, 4)])
+
+
+def chunk_i2f() -> int:
+    return _attach_checksum(OP_I2F ** 4, [(OP_I2F, 4)])
+
+
+def chunk_syscall() -> int:
+    return _attach_checksum(OP_SYSCALL ** 4, [(OP_SYSCALL, 4)])
+
+
+def chunk_int() -> int:
+    return _attach_checksum(OP_INT ** 4, [(OP_INT, 4)])
+
+
+def chunk_halt() -> int:
+    return _attach_checksum(OP_HALT ** 4, [(OP_HALT, 4)])
+
+
+def chunk_nop() -> int:
+    return _attach_checksum(OP_NOP ** 4, [(OP_NOP, 4)])
+
+
+def chunk_hash() -> int:
+    return _attach_checksum(OP_HASH ** 4, [(OP_HASH, 4)])
+
+
+def chunk_sign() -> int:
+    return _attach_checksum(OP_SIGN ** 4, [(OP_SIGN, 4)])
+
+
+def chunk_verify() -> int:
+    return _attach_checksum(OP_VERIFY ** 4, [(OP_VERIFY, 4)])
+
+
+def chunk_rng() -> int:
+    return _attach_checksum(OP_RNG ** 4, [(OP_RNG, 4)])
+
+
+def chunk_brk() -> int:
+    return _attach_checksum(OP_BRK ** 4, [(OP_BRK, 4)])
+
+
+def chunk_trace() -> int:
+    return _attach_checksum(OP_TRACE ** 4, [(OP_TRACE, 4)])
