@@ -18,21 +18,54 @@ You can then run `uor-cli` from anywhere.
 
 | Instruction | Description               |
 |-------------|---------------------------|
-| `PUSH n`    | Push integer `n`          |
-| `ADD`       | Pop two values, push sum  |
-| `SUB`       | Pop two values, push diff |
-| `MUL`       | Pop two values, push prod |
-| `LOAD a`    | Push value at memory `a`  |
-| `STORE a`   | Store value into `a`      |
-| `JMP o`     | Jump by offset `o`        |
-| `JZ o`      | Jump if zero              |
-| `JNZ o`     | Jump if non‑zero          |
-| `PRINT`     | Pop value and output      |
-| `BLOCK n`   | Run next `n` chunks in new VM |
-| `NTT n`     | NTT roundtrip next `n` chunks |
+| `PUSH n`       | Push integer `n`                |
+| `ADD`          | Pop two values, push sum        |
+| `SUB`          | Pop two values, push diff       |
+| `MUL`          | Pop two values, push prod       |
+| `LOAD a`       | Push value at memory `a`        |
+| `STORE a`      | Store value into `a`            |
+| `JMP o`        | Jump by offset `o`              |
+| `JZ o`         | Jump if zero                    |
+| `JNZ o`        | Jump if non‑zero                |
+| `PRINT`        | Pop value and output            |
+| `BLOCK n`      | Run next `n` chunks in new VM   |
+| `NTT n`        | NTT roundtrip next `n` chunks   |
+| `CALL o`       | Call subroutine at offset `o`   |
+| `RET`          | Return from subroutine          |
+| `ALLOC n`      | Allocate `n` units of memory    |
+| `FREE a`       | Free memory at address `a`      |
+| `INPUT`        | Read value from input queue     |
+| `OUTPUT`       | Write top of stack to output    |
+| `NET_SEND`     | Send network packet             |
+| `NET_RECV`     | Receive network packet          |
+| `THREAD_START` | Spawn new thread                |
+| `THREAD_JOIN`  | Join spawned thread             |
+| `DIV`          | Pop two values, push quotient   |
+| `MOD`          | Pop two values, push remainder  |
+| `AND`          | Bitwise AND on two values       |
+| `OR`           | Bitwise OR on two values        |
+| `XOR`          | Bitwise XOR on two values       |
+| `SHL`          | Shift left                      |
+| `SHR`          | Shift right                     |
+| `NEG`          | Negate top of stack             |
+| `FMUL`         | Multiply two floats             |
+| `FDIV`         | Divide two floats               |
+| `F2I`          | Float to integer conversion     |
+| `I2F`          | Integer to float conversion     |
+| `SYSCALL`      | Perform host system call        |
+| `INT`          | Trigger software interrupt      |
+| `HALT`         | Stop execution                  |
+| `NOP`          | No operation                    |
+| `HASH`         | Hash top of stack               |
+| `SIGN`         | Sign value with key             |
+| `VERIFY`       | Verify signature                |
+| `RNG`          | Push random value               |
+| `BRK`          | Emit literal ``BRK``            |
+| `TRACE`        | Output current stack value      |
+| `CHECKPOINT`   | Save VM state through backend   |
 
-Negative jump offsets are encoded using a special `NEG_FLAG` prime.  Memory is
-an unbounded dictionary of integer addresses.
+Negative offsets for jumps and `CALL` are encoded using a special `NEG_FLAG` prime.
+Memory is an unbounded dictionary of integer addresses.
 
 ## Assembler and CLI
 
