@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Tuple
 
-import time
+from uor.cache import InstructionCache
 from primes import get_prime, _PRIME_IDX, factor
 from chunks import (
     BLOCK_TAG,
@@ -21,6 +21,9 @@ from chunks import (
 )
 
 
+_CACHE = InstructionCache()
+
+
 @dataclass
 class DecodedInstruction:
     data: List[Tuple[int, int]]
@@ -29,7 +32,9 @@ class DecodedInstruction:
 
 def _decode_single(chunk: int) -> DecodedInstruction:
     """Decode a single chunk into a ``DecodedInstruction`` object."""
-    time.sleep(0.0001)
+    cached = _CACHE.get(chunk)
+    if cached is not None:
+        return DecodedInstruction(data=cached.data)
     fac = factor(chunk)
     chk = None
     data: List[Tuple[int, int]] = []
@@ -54,7 +59,9 @@ def _decode_single(chunk: int) -> DecodedInstruction:
     if chk != get_prime(xor):
         raise ValueError("Checksum mismatch")
 
-    return DecodedInstruction(data=data)
+    instr = DecodedInstruction(data=data)
+    _CACHE.put(chunk, instr)
+    return DecodedInstruction(data=instr.data)
 
 
 def decode(chunks: List[int]) -> List[DecodedInstruction]:
