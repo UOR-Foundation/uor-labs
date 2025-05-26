@@ -35,6 +35,8 @@ from chunks import (
     OP_FMUL, OP_FDIV, OP_F2I, OP_I2F,
     OP_SYSCALL, OP_INT, OP_HALT, OP_NOP,
     OP_HASH, OP_SIGN, OP_VERIFY, OP_RNG, OP_BRK, OP_TRACE, OP_DEBUG, OP_ATOMIC,
+    OP_NOT, OP_GT, OP_LT, OP_EQ, OP_NEQ, OP_GTE, OP_LTE,
+    OP_DUP, OP_SWAP, OP_ROT, OP_DROP, OP_OVER, OP_PICK,
     NEG_FLAG,
     BLOCK_TAG, NTT_TAG, T_MOD,
     NTT_ROOT,
@@ -111,6 +113,19 @@ class VM:
             OP_THREAD_START: self._op_thread_start,
             OP_THREAD_JOIN: self._op_thread_join,
             OP_CHECKPOINT: self._op_checkpoint,
+            OP_NOT: self._op_not,
+            OP_GT: self._op_gt,
+            OP_LT: self._op_lt,
+            OP_EQ: self._op_eq,
+            OP_NEQ: self._op_neq,
+            OP_GTE: self._op_gte,
+            OP_LTE: self._op_lte,
+            OP_DUP: self._op_dup,
+            OP_SWAP: self._op_swap,
+            OP_ROT: self._op_rot,
+            OP_DROP: self._op_drop,
+            OP_OVER: self._op_over,
+            OP_PICK: self._op_pick,
         }
 
     def _pop(self) -> int:
@@ -523,5 +538,77 @@ class VM:
 
     def _op_atomic(self, data: List[Tuple[int, int]]) -> Iterator[str]:
         self.atomic = not self.atomic
+        return iter(())
+
+    def _op_not(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        v = self._pop()
+        self.stack.append(~v)
+        return iter(())
+
+    def _op_gt(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        a, b = self._pop_two()
+        self.stack.append(1 if a > b else 0)
+        return iter(())
+
+    def _op_lt(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        a, b = self._pop_two()
+        self.stack.append(1 if a < b else 0)
+        return iter(())
+
+    def _op_eq(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        a, b = self._pop_two()
+        self.stack.append(1 if a == b else 0)
+        return iter(())
+
+    def _op_neq(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        a, b = self._pop_two()
+        self.stack.append(1 if a != b else 0)
+        return iter(())
+
+    def _op_gte(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        a, b = self._pop_two()
+        self.stack.append(1 if a >= b else 0)
+        return iter(())
+
+    def _op_lte(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        a, b = self._pop_two()
+        self.stack.append(1 if a <= b else 0)
+        return iter(())
+
+    def _op_dup(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        if not self.stack:
+            raise StackUnderflowError("Stack underflow", self.ip - 1)
+        self.stack.append(self.stack[-1])
+        return iter(())
+
+    def _op_swap(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        a, b = self._pop_two()
+        self.stack.extend([b, a])
+        return iter(())
+
+    def _op_rot(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        if len(self.stack) < 3:
+            raise StackUnderflowError("Stack underflow", self.ip - 1)
+        c = self.stack.pop()
+        b = self.stack.pop()
+        a = self.stack.pop()
+        self.stack.extend([b, c, a])
+        return iter(())
+
+    def _op_drop(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        self._pop()
+        return iter(())
+
+    def _op_over(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        if len(self.stack) < 2:
+            raise StackUnderflowError("Stack underflow", self.ip - 1)
+        self.stack.append(self.stack[-2])
+        return iter(())
+
+    def _op_pick(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        idx = self._pop()
+        if idx < 0 or idx >= len(self.stack):
+            raise StackUnderflowError("Stack underflow", self.ip - 1)
+        self.stack.append(self.stack[-idx - 1])
         return iter(())
 

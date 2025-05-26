@@ -54,6 +54,20 @@ def assemble(text: str) -> List[int]:
             result.append(chunks.chunk_or())
         elif op == "XOR":
             result.append(chunks.chunk_xor())
+        elif op == "NOT":
+            result.append(chunks.chunk_not())
+        elif op == "GT":
+            result.append(chunks.chunk_gt())
+        elif op == "LT":
+            result.append(chunks.chunk_lt())
+        elif op == "EQ":
+            result.append(chunks.chunk_eq())
+        elif op == "NEQ":
+            result.append(chunks.chunk_neq())
+        elif op == "GTE":
+            result.append(chunks.chunk_gte())
+        elif op == "LTE":
+            result.append(chunks.chunk_lte())
         elif op == "SHL":
             result.append(chunks.chunk_shl())
         elif op == "SHR":
@@ -92,6 +106,18 @@ def assemble(text: str) -> List[int]:
             result.append(chunks.chunk_debug())
         elif op == "ATOMIC":
             result.append(chunks.chunk_atomic())
+        elif op == "DUP":
+            result.append(chunks.chunk_dup())
+        elif op == "SWAP":
+            result.append(chunks.chunk_swap())
+        elif op == "ROT":
+            result.append(chunks.chunk_rot())
+        elif op == "DROP":
+            result.append(chunks.chunk_drop())
+        elif op == "OVER":
+            result.append(chunks.chunk_over())
+        elif op == "PICK":
+            result.append(chunks.chunk_pick())
         elif op == "PRINT":
             result.append(chunks.chunk_print())
         elif op == "LOAD":
