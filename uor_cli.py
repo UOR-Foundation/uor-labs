@@ -18,6 +18,7 @@ from uor.agents.factory import AppFactory
 from vm import VM
 from uor.debug import DebugVM
 from decoder import decode
+from uor.profiler import VMProfiler
 import chunks
 import assembler
 import time
@@ -180,6 +181,38 @@ def cmd_universal_benchmark(args: argparse.Namespace) -> int:
     return 0
 
 
+def _load_chunks(source: str | None) -> list[int]:
+    """Internal helper to load or assemble a program."""
+    if source is None:
+        text = sys.stdin.read()
+        return assembler.assemble(text)
+    if source.endswith('.uor'):
+        with open(source, 'r', encoding='utf-8') as fh:
+            return [int(x) for x in fh.read().split() if x]
+    return assembler.assemble_file(source)
+
+
+def cmd_profile(args: argparse.Namespace) -> int:
+    """Run a program with profiling enabled and print metrics."""
+    chunks_list = _load_chunks(args.source)
+    profiler = VMProfiler()
+    vm = VM(profiler=profiler)
+    list(vm.execute(decode(chunks_list)))
+    print(profiler.export_report())
+    return 0
+
+
+def cmd_flamegraph(args: argparse.Namespace) -> int:
+    """Run a program with profiling and export flamegraph data."""
+    chunks_list = _load_chunks(args.source)
+    profiler = VMProfiler()
+    vm = VM(profiler=profiler)
+    list(vm.execute(decode(chunks_list)))
+    # export_flamegraph already returns a newline-delimited string
+    sys.stdout.write(profiler.export_flamegraph())
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Pure UOR VM utilities")
     sub = p.add_subparsers(dest='cmd', required=True)
@@ -192,6 +225,14 @@ def build_parser() -> argparse.ArgumentParser:
     pr = sub.add_parser('run', help='assemble and run program')
     pr.add_argument('source', nargs='?', help='source .asm or encoded .uor file; reads assembly from stdin if omitted')
     pr.set_defaults(func=cmd_run)
+
+    pp = sub.add_parser('profile', help='run program with profiler')
+    pp.add_argument('source', nargs='?', help='assembly or .uor file, defaults to stdin')
+    pp.set_defaults(func=cmd_profile)
+
+    pfm = sub.add_parser('flamegraph', help='export flamegraph for program')
+    pfm.add_argument('source', nargs='?', help='assembly or .uor file, defaults to stdin')
+    pfm.set_defaults(func=cmd_flamegraph)
 
     pd = sub.add_parser('debug', help='run program with debugger')
     pd.add_argument('source', nargs='?', help='assembly or .uor file, defaults to stdin')

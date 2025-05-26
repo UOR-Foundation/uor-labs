@@ -48,6 +48,8 @@ uor-cli run < program.asm               # assemble from stdin and run
 uor-cli ipfs-add program.asm            # store encoded program via IPFS
 uor-cli ipfs-run QmCID                  # run program fetched from IPFS
 uor-cli generate --provider openai "your prompt"  # create program with an LLM
+uor-cli profile program.asm             # run with profiler and print metrics
+uor-cli flamegraph program.asm          # output flamegraph data
 ```
 
 Assembly files consist of one instruction per line with optional labels and
