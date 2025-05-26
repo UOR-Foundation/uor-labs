@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from typing import List, Dict, Iterator, Tuple
 
+from uor.jit import JITCompiler, JITBlock
+
 from decoder import DecodedInstruction
 
 from primes import _PRIME_IDX
@@ -30,6 +32,10 @@ class VM:
         self.call_stack: List[int] = []
         self.heap_ptr: int = 0
         self.io_in: List[int] = []
+        self._counter: Dict[int, int] = {}
+        self._compiled: Dict[int, JITBlock] = {}
+        self.jit_threshold: int = 100
+        self._jit = JITCompiler()
         self._dispatch = {
             OP_PUSH: self._op_push,
             OP_ADD: self._op_add,
@@ -56,7 +62,21 @@ class VM:
     def execute(self, program: List[DecodedInstruction]) -> Iterator[str]:
         self.ip = 0
         while self.ip < len(program):
+            if self._jit.available and self.ip in self._compiled:
+                yield from self._compiled[self.ip](self)
+                continue
+
             instr = program[self.ip]
+            self._counter[self.ip] = self._counter.get(self.ip, 0) + 1
+            if (
+                self._jit.available
+                and self._counter[self.ip] >= self.jit_threshold
+                and self.ip not in self._compiled
+            ):
+                block = self._jit.compile_block([instr])
+                if block is not None:
+                    self._compiled[self.ip] = block
+
             self.ip += 1
             data = instr.data
 
