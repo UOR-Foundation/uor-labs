@@ -11,6 +11,11 @@ from chunks import (
     OP_SUB, OP_MUL,
     OP_LOAD, OP_STORE,
     OP_JMP, OP_JZ, OP_JNZ,
+    OP_CALL, OP_RET,
+    OP_ALLOC, OP_FREE,
+    OP_INPUT, OP_OUTPUT,
+    OP_NET_SEND, OP_NET_RECV,
+    OP_THREAD_START, OP_THREAD_JOIN,
     NEG_FLAG,
     BLOCK_TAG, NTT_TAG, T_MOD,
     NTT_ROOT,
@@ -22,6 +27,9 @@ class VM:
         self.stack: List[int] = []
         self.mem: Dict[int, int] = {}
         self.ip: int = 0
+        self.call_stack: List[int] = []
+        self.heap_ptr: int = 0
+        self.io_in: List[int] = []
         self._dispatch = {
             OP_PUSH: self._op_push,
             OP_ADD: self._op_add,
@@ -33,6 +41,16 @@ class VM:
             OP_JZ: self._op_jz,
             OP_JNZ: self._op_jnz,
             OP_PRINT: self._op_print,
+            OP_CALL: self._op_call,
+            OP_RET: self._op_ret,
+            OP_ALLOC: self._op_alloc,
+            OP_FREE: self._op_free,
+            OP_INPUT: self._op_input,
+            OP_OUTPUT: self._op_output,
+            OP_NET_SEND: self._op_net_send,
+            OP_NET_RECV: self._op_net_recv,
+            OP_THREAD_START: self._op_thread_start,
+            OP_THREAD_JOIN: self._op_thread_join,
         }
 
     def execute(self, program: List[DecodedInstruction]) -> Iterator[str]:
@@ -150,3 +168,56 @@ class VM:
 
     def _op_print(self, data: List[Tuple[int, int]]) -> Iterator[str]:
         yield str(self.stack.pop())
+
+    # ------------------------------------------------------------------
+    # Extended opcode handlers
+    # ------------------------------------------------------------------
+
+    def _op_call(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        sign = -1 if any(p == NEG_FLAG and e == 5 for p, e in data) else 1
+        off = next(p for p, e in data if e == 5 and p != NEG_FLAG)
+        self.call_stack.append(self.ip)
+        self.ip += sign * _PRIME_IDX[off]
+        return iter(())
+
+    def _op_ret(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        if self.call_stack:
+            self.ip = self.call_stack.pop()
+        return iter(())
+
+    def _op_alloc(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        size_p = next(p for p, e in data if e == 5)
+        size = _PRIME_IDX[size_p]
+        addr = self.heap_ptr
+        self.heap_ptr += size
+        for i in range(size):
+            self.mem[addr + i] = 0
+        self.stack.append(addr)
+        return iter(())
+
+    def _op_free(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        addr_p = next(p for p, e in data if e == 5)
+        addr = _PRIME_IDX[addr_p]
+        self.mem.pop(addr, None)
+        return iter(())
+
+    def _op_input(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        val = self.io_in.pop(0) if self.io_in else 0
+        self.stack.append(val)
+        return iter(())
+
+    def _op_output(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        yield str(self.stack.pop())
+
+    def _op_net_send(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        return iter(())
+
+    def _op_net_recv(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        self.stack.append(0)
+        return iter(())
+
+    def _op_thread_start(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        return iter(())
+
+    def _op_thread_join(self, data: List[Tuple[int, int]]) -> Iterator[str]:
+        return iter(())

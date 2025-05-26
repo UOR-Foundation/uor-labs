@@ -9,12 +9,17 @@ from primes import get_prime, _PRIME_IDX
 from primes import _PRIMES
 from primes import _extend_primes_to
 
-_extend_primes_to(13)
+_extend_primes_to(23)
 OP_PUSH, OP_ADD, OP_PRINT = _PRIMES[0], _PRIMES[1], _PRIMES[2]
 OP_SUB, OP_MUL = _PRIMES[6], _PRIMES[7]
 OP_LOAD, OP_STORE = _PRIMES[8], _PRIMES[9]
 OP_JMP, OP_JZ, OP_JNZ = _PRIMES[10], _PRIMES[11], _PRIMES[12]
 NEG_FLAG = _PRIMES[13]
+OP_CALL, OP_RET = _PRIMES[14], _PRIMES[15]
+OP_ALLOC, OP_FREE = _PRIMES[16], _PRIMES[17]
+OP_INPUT, OP_OUTPUT = _PRIMES[18], _PRIMES[19]
+OP_NET_SEND, OP_NET_RECV = _PRIMES[20], _PRIMES[21]
+OP_THREAD_START, OP_THREAD_JOIN = _PRIMES[22], _PRIMES[23]
 BLOCK_TAG, NTT_TAG, T_MOD = _PRIMES[3], _PRIMES[4], _PRIMES[5]
 NTT_ROOT = 2
 
@@ -119,3 +124,55 @@ def chunk_block_start(n: int) -> int:
 def chunk_ntt(n: int) -> int:
     lp = get_prime(n)
     return _attach_checksum(NTT_TAG ** 4 * lp ** 5, [(NTT_TAG, 4), (lp, 5)])
+
+
+def chunk_call(offset: int) -> int:
+    sign = 1
+    if offset < 0:
+        sign = -1
+        offset = -offset
+    p = get_prime(offset)
+    fac = [(OP_CALL, 4), (p, 5)]
+    raw = OP_CALL ** 4 * p ** 5
+    if sign < 0:
+        raw *= NEG_FLAG ** 5
+        fac.append((NEG_FLAG, 5))
+    return _attach_checksum(raw, fac)
+
+
+def chunk_ret() -> int:
+    return _attach_checksum(OP_RET ** 4, [(OP_RET, 4)])
+
+
+def chunk_alloc(size: int) -> int:
+    p = get_prime(size)
+    return _attach_checksum(OP_ALLOC ** 4 * p ** 5, [(OP_ALLOC, 4), (p, 5)])
+
+
+def chunk_free(addr: int) -> int:
+    p = get_prime(addr)
+    return _attach_checksum(OP_FREE ** 4 * p ** 5, [(OP_FREE, 4), (p, 5)])
+
+
+def chunk_input() -> int:
+    return _attach_checksum(OP_INPUT ** 4, [(OP_INPUT, 4)])
+
+
+def chunk_output() -> int:
+    return _attach_checksum(OP_OUTPUT ** 4, [(OP_OUTPUT, 4)])
+
+
+def chunk_net_send() -> int:
+    return _attach_checksum(OP_NET_SEND ** 4, [(OP_NET_SEND, 4)])
+
+
+def chunk_net_recv() -> int:
+    return _attach_checksum(OP_NET_RECV ** 4, [(OP_NET_RECV, 4)])
+
+
+def chunk_thread_start() -> int:
+    return _attach_checksum(OP_THREAD_START ** 4, [(OP_THREAD_START, 4)])
+
+
+def chunk_thread_join() -> int:
+    return _attach_checksum(OP_THREAD_JOIN ** 4, [(OP_THREAD_JOIN, 4)])
