@@ -21,7 +21,12 @@ document.getElementById('generate').onclick = async function() {
         body: JSON.stringify({prompt: prompt, provider: provider})
     });
     const data = await resp.json();
-    document.getElementById('result').textContent = JSON.stringify(data);
+    if (data.cid) {
+        const link = `https://ipfs.io/ipfs/${data.cid}`;
+        document.getElementById('result').innerHTML = `<a href="${link}" target="_blank">${data.cid}</a>`;
+    } else {
+        document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+    }
 };
 </script>
 </body>
