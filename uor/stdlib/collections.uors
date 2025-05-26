@@ -1,0 +1,192 @@
+// Collections with coherence guarantees
+@coherent object CoherentList {
+    size: int;
+    capacity: int;
+    data: int;  // Memory address
+    
+    function new() -> CoherentList {
+        let list = CoherentList();
+        list.size = 0;
+        list.capacity = 10;
+        list.data = allocate(10);
+        return list;
+    }
+    
+    function push(value: int) -> void {
+        if (size >= capacity) {
+            grow();
+        }
+        store(data + size, value);
+        size = size + 1;
+    }
+    
+    function pop() -> int {
+        if (size == 0) {
+            return 0;  // Error case
+        }
+        size = size - 1;
+        return load(data + size);
+    }
+    
+    function get(index: int) -> int {
+        if (index >= size) {
+            return 0;  // Error case
+        }
+        return load(data + index);
+    }
+    
+    function set(index: int, value: int) -> void {
+        if (index < size) {
+            store(data + index, value);
+        }
+    }
+    
+    function grow() -> void {
+        let newCapacity = capacity * 2;
+        let newData = allocate(newCapacity);
+        
+        // Copy old data
+        let i = 0;
+        while (i < size) {
+            store(newData + i, load(data + i));
+            i = i + 1;
+        }
+        
+        free(data);
+        data = newData;
+        capacity = newCapacity;
+    }
+    
+    function clear() -> void {
+        size = 0;
+    }
+    
+    // Coherence check
+    function checkCoherence() -> bool {
+        // Verify internal consistency
+        return size <= capacity;
+    }
+}
+
+@coherent object CoherentMap {
+    size: int;
+    capacity: int;
+    keys: int;    // Memory address for keys
+    values: int;  // Memory address for values
+    
+    function new() -> CoherentMap {
+        let map = CoherentMap();
+        map.size = 0;
+        map.capacity = 16;
+        map.keys = allocate(16);
+        map.values = allocate(16);
+        return map;
+    }
+    
+    function hash(key: int) -> int {
+        // Simple hash function
+        return (key * 2654435761) % capacity;
+    }
+    
+    function put(key: int, value: int) -> void {
+        let index = hash(key);
+        let probes = 0;
+        
+        // Linear probing for collision resolution
+        while (probes < capacity) {
+            let storedKey = load(keys + index);
+            if (storedKey == 0 || storedKey == key) {
+                store(keys + index, key);
+                store(values + index, value);
+                if (storedKey == 0) {
+                    size = size + 1;
+                }
+                return;
+            }
+            index = (index + 1) % capacity;
+            probes = probes + 1;
+        }
+        
+        // Table full, need to resize
+        resize();
+        put(key, value);
+    }
+    
+    function get(key: int) -> int {
+        let index = hash(key);
+        let probes = 0;
+        
+        while (probes < capacity) {
+            let storedKey = load(keys + index);
+            if (storedKey == key) {
+                return load(values + index);
+            }
+            if (storedKey == 0) {
+                return 0;  // Not found
+            }
+            index = (index + 1) % capacity;
+            probes = probes + 1;
+        }
+        return 0;  // Not found
+    }
+    
+    function resize() -> void {
+        let oldKeys = keys;
+        let oldValues = values;
+        let oldCapacity = capacity;
+        
+        capacity = capacity * 2;
+        keys = allocate(capacity);
+        values = allocate(capacity);
+        size = 0;
+        
+        // Rehash all entries
+        let i = 0;
+        while (i < oldCapacity) {
+            let key = load(oldKeys + i);
+            if (key != 0) {
+                put(key, load(oldValues + i));
+            }
+            i = i + 1;
+        }
+        
+        free(oldKeys);
+        free(oldValues);
+    }
+}
+
+// Set operations
+@coherent object Set {
+    map: CoherentMap;
+    
+    function new() -> Set {
+        let set = Set();
+        set.map = CoherentMap.new();
+        return set;
+    }
+    
+    function add(value: int) -> void {
+        map.put(value, 1);
+    }
+    
+    function contains(value: int) -> bool {
+        return map.get(value) != 0;
+    }
+    
+    function remove(value: int) -> void {
+        // Would need delete operation in map
+        map.put(value, 0);
+    }
+    
+    function union(other: Set) -> Set {
+        let result = Set.new();
+        // Implementation would iterate over both sets
+        return result;
+    }
+    
+    function intersection(other: Set) -> Set {
+        let result = Set.new();
+        // Implementation would check membership
+        return result;
+    }
+}

@@ -6,3 +6,4 @@ Welcome to uor-labs's documentation!
    :caption: Contents:
 
    usage
+   stdlib

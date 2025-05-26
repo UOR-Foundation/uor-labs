@@ -1,0 +1,36 @@
+// IO module for input/output operations
+@coherent object IO {
+    // Console operations
+    function print(value: int) -> void {
+        // VM primitive PRINT
+    }
+    
+    function println(value: int) -> void {
+        print(value);
+        // Would print newline if string support existed
+    }
+    
+    function read() -> int {
+        // VM primitive INPUT
+    }
+    
+    // File operations (using memory-mapped IO)
+    function fileOpen(filename: int) -> int {
+        // Returns file handle
+        // Implementation would use SYSCALL
+    }
+    
+    function fileRead(handle: int, size: int) -> int {
+        // Reads data from file
+        // Returns memory address of data
+    }
+    
+    function fileWrite(handle: int, data: int, size: int) -> int {
+        // Writes data to file
+        // Returns bytes written
+    }
+    
+    function fileClose(handle: int) -> void {
+        // Closes file handle
+    }
+}
