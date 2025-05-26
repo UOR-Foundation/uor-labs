@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "uor-labs"
-version = "0.1.0"
+version = "0.2.0"
 description = "Pure UOR virtual machine and utilities"
 readme = "README.md"
 license = {text = "MIT"}
@@ -32,7 +32,14 @@ uor-generate = "generate_cli:main"
 uor-server = "server_cli:main"
 
 [tool.setuptools]
-packages = ["uor"]
+packages = [
+    "uor",
+    "uor.agents",
+    "uor.compiler",
+    "uor.jit",
+    "uor.llm",
+    "uor.vm",
+]
 py-modules = [
     "assembler",
     "async_server",

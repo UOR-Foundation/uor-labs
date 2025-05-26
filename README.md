@@ -122,3 +122,21 @@ Available routes:
 - `POST /generate` – body `{ "prompt": "...", "provider": "openai" }` calls the selected LLM, assembles the result, stores it via IPFS and returns `{"cid": "..."}`.
 
 The server relies on the same environment variables as `llm_client` for API keys.
+
+## Universal Number
+
+`UniversalNumber` represents integers using prime and geometric coordinates. It
+caches prime factorizations and reference frames for fast reuse.  Methods like
+`getGradedComponents`, `innerProduct` and `coherenceNorm` provide simple
+geometric operations on these numbers.
+
+### Universal CLI
+
+The `universal` subcommand exposes basic operations:
+
+```bash
+uor-cli universal create 4        # build a number and print VM output
+uor-cli universal dwt signal.txt  # apply DWT to a signal
+uor-cli universal denoise img.raw # denoise data using transforms
+uor-cli universal benchmark       # measure operation speed
+```
