@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from math import isqrt, gcd
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Iterator
 import time
 from weakref import WeakValueDictionary
 import random
@@ -23,8 +23,8 @@ _PRIME_IDX: Dict[int, int] = {2: 0}
 _sieve_limit = 2
 
 
-def segmented_sieve(limit: int, segment_size: int = 32768) -> None:
-    """Extend the prime list using a segmented sieve up to ``limit``."""
+def segmented_sieve(limit: int, segment_size: int = 32768) -> Iterator[int]:
+    """Yield primes up to ``limit`` while extending the internal cache."""
     global _sieve_limit
     if limit <= _sieve_limit:
         return
@@ -32,7 +32,7 @@ def segmented_sieve(limit: int, segment_size: int = 32768) -> None:
     # ensure we have primes up to sqrt(limit) for sieving
     root = isqrt(limit)
     if root > _sieve_limit:
-        segmented_sieve(root, segment_size)
+        yield from segmented_sieve(root, segment_size)
 
     start = _sieve_limit + 1
     while start <= limit:
@@ -49,6 +49,7 @@ def segmented_sieve(limit: int, segment_size: int = 32768) -> None:
                 n = start + i
                 _PRIME_IDX[n] = len(_PRIMES)
                 _PRIMES.append(n)
+                yield n
         _sieve_limit = end
         start = end + 1
 
@@ -57,7 +58,8 @@ def _extend_primes_to(idx: int) -> None:
     limit = _sieve_limit
     while len(_PRIMES) <= idx:
         limit = max(limit * 2, 4)
-        segmented_sieve(limit)
+        for _ in segmented_sieve(limit):
+            pass
 
 
 def get_prime(idx: int) -> int:
