@@ -5,6 +5,7 @@ from typing import Dict, List, Iterator, Optional, Set, Tuple
 import time
 
 from vm import VM
+from uor.debugger import CallStackTracker
 from decoder import DecodedInstruction
 from chunks import (
     OP_LOAD,
@@ -23,6 +24,7 @@ class DebugVM(VM):
 
     def __init__(self, profiler: Optional[object] = None) -> None:
         super().__init__(profiler=profiler)
+        self.call_stack_tracker = CallStackTracker()
         self.breakpoints: Set[int] = set()
         self.watchpoints: Dict[int, str] = {}
         self.tracing: bool = False
@@ -59,6 +61,15 @@ class DebugVM(VM):
     def step(self) -> None:
         """Pause after the next instruction."""
         self._step_mode = True
+
+    def backtrace(self) -> str:
+        """Return a formatted backtrace of call frames."""
+        if self.call_stack_tracker is None:
+            return ""
+        lines = []
+        for idx, frame in enumerate(self.call_stack_tracker.backtrace()):
+            lines.append(f"#{idx} call@{frame.call_site} -> {frame.return_ip}")
+        return "\n".join(lines)
 
     # ------------------------------------------------------------------
     # Execution

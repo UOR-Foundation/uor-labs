@@ -8,6 +8,7 @@ from uor.jit import JITCompiler, JITBlock
 from uor.profiler import VMProfiler
 from uor.memory import SegmentedMemory
 from uor.vm.coherence import CoherenceValidator
+from uor.debugger import CallStackTracker
 from uor.exceptions import (
     DivisionByZeroError,
     MemoryAccessError,
@@ -55,6 +56,7 @@ class VM:
         self.sp = self.mem.stack_pointer
         self.ip: int = 0
         self.call_stack: List[int] = []
+        self.call_stack_tracker: CallStackTracker | None = None
         self.io_in: List[int] = []
         self.io_out: List[int] = []
         self.atomic: bool = False
@@ -362,12 +364,16 @@ class VM:
         sign = -1 if any(p == NEG_FLAG and e == 5 for p, e in data) else 1
         off = next(p for p, e in data if e == 5 and p != NEG_FLAG)
         self.call_stack.append(self.ip)
+        if self.call_stack_tracker is not None:
+            self.call_stack_tracker.push(self.ip - 1, self.ip)
         self.ip += sign * _PRIME_IDX[off]
         return iter(())
 
     def _op_ret(self, data: List[Tuple[int, int]]) -> Iterator[str]:
         if self.call_stack:
             self.ip = self.call_stack.pop()
+            if self.call_stack_tracker is not None:
+                self.call_stack_tracker.pop()
         return iter(())
 
     def _op_alloc(self, data: List[Tuple[int, int]]) -> Iterator[str]:
