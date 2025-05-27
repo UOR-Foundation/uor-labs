@@ -51,6 +51,8 @@ class VM:
         self.ds = self.mem.DATA_START
         self.hs = self.mem.HEAP_START
         self.ss = self.mem.STACK_START
+        self.hp = self.mem.heap_pointer
+        self.sp = self.mem.stack_pointer
         self.ip: int = 0
         self.call_stack: List[int] = []
         self.io_in: List[int] = []

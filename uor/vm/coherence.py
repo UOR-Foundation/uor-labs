@@ -30,7 +30,8 @@ class CoherenceValidator:
     # Helpers
     # ------------------------------------------------------------------
     def _checksum(self, vm) -> float:
-        return float(sum(vm.stack) + sum(vm.mem.storage.values()) + vm.ip)
+        mem_sum = sum(vm.mem.dump().values())
+        return float(sum(vm.stack) + mem_sum + vm.ip)
 
     def start(self, vm) -> None:
         self._last_checksum = self._checksum(vm)
