@@ -12,6 +12,31 @@ class SegmentedMemoryTest(unittest.TestCase):
         with self.assertRaises(MemoryError):
             mem.load(SegmentedMemory.STACK_START + SegmentedMemory.STACK_SIZE + 10)
 
+    def test_permission_enforcement(self):
+        mem = SegmentedMemory()
+        mem.load_code([1])
+        with self.assertRaises(MemoryError):
+            mem.store(mem.CODE_START, 3)
+        with self.assertRaises(MemoryError):
+            mem.load(mem.MMIO_OUT)
+        with self.assertRaises(MemoryError):
+            mem.store(mem.MMIO_IN, 1)
+
+    def test_allocate_helpers(self):
+        mem = SegmentedMemory()
+        sp = mem.stack_pointer
+        addr_s = mem.allocate_stack(4)
+        self.assertEqual(addr_s, sp)
+        self.assertEqual(mem.stack_pointer, sp + 4)
+        hp = mem.heap_pointer
+        addr_h = mem.allocate_heap(8)
+        self.assertEqual(addr_h, hp)
+        self.assertEqual(mem.heap_pointer, hp + 8)
+        mem.store(addr_s, 1)
+        mem.store(addr_h, 2)
+        self.assertEqual(mem.load(addr_s), 1)
+        self.assertEqual(mem.load(addr_h), 2)
+
     def test_gc(self):
         mem = SegmentedMemory()
         a1 = mem.allocate(10)

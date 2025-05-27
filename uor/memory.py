@@ -3,6 +3,18 @@ from __future__ import annotations
 
 import math
 from typing import Dict, List, Optional
+from enum import Enum, auto
+
+
+class MemorySegment(Enum):
+    """Logical memory segments."""
+
+    CODE = auto()
+    DATA = auto()
+    HEAP = auto()
+    STACK = auto()
+    MMIO_IN = auto()
+    MMIO_OUT = auto()
 
 
 class SegmentedMemory:
@@ -49,7 +61,23 @@ class SegmentedMemory:
         self.MMIO_IN = self.STACK_START + self.STACK_SIZE
         self.MMIO_OUT = self.MMIO_IN + 1
 
-        self.storage: Dict[int, int] = {}
+        self.segments: Dict[MemorySegment, Dict[int, int]] = {
+            MemorySegment.DATA: {},
+            MemorySegment.HEAP: {},
+            MemorySegment.STACK: {},
+        }
+        self.permissions = {
+            MemorySegment.CODE: {"read": True, "write": False, "execute": True},
+            MemorySegment.DATA: {"read": True, "write": True, "execute": False},
+            MemorySegment.HEAP: {"read": True, "write": True, "execute": False},
+            MemorySegment.STACK: {"read": True, "write": True, "execute": False},
+            MemorySegment.MMIO_IN: {"read": True, "write": False, "execute": False},
+            MemorySegment.MMIO_OUT: {"read": False, "write": True, "execute": False},
+        }
+
+        self.heap_pointer = self.HEAP_START
+        self.stack_pointer = self.STACK_START
+
         self._free_pages = set(range(self.HEAP_SIZE // self.PAGE_SIZE))
         self._allocations: Dict[int, Dict[str, object]] = {}
 
@@ -79,17 +107,19 @@ class SegmentedMemory:
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
-    def _segment(self, addr: int) -> str:
+    def _segment(self, addr: int) -> MemorySegment:
         if self.CODE_START <= addr < self.CODE_START + self.CODE_SIZE:
-            return "code"
+            return MemorySegment.CODE
         if self.DATA_START <= addr < self.HEAP_START:
-            return "data"
+            return MemorySegment.DATA
         if self.HEAP_START <= addr < self.STACK_START:
-            return "heap"
+            return MemorySegment.HEAP
         if self.STACK_START <= addr < self.STACK_START + self.STACK_SIZE:
-            return "stack"
-        if addr in (self.MMIO_IN, self.MMIO_OUT):
-            return "mmio"
+            return MemorySegment.STACK
+        if addr == self.MMIO_IN:
+            return MemorySegment.MMIO_IN
+        if addr == self.MMIO_OUT:
+            return MemorySegment.MMIO_OUT
         raise MemoryError("Address out of range")
 
     def _page_for(self, addr: int) -> int:
@@ -111,30 +141,39 @@ class SegmentedMemory:
     # ------------------------------------------------------------------
     def load(self, addr: int) -> int:
         seg = self._segment(addr)
-        if seg == "code":
+        if not self.permissions[seg]["read"]:
+            if seg == MemorySegment.MMIO_OUT:
+                raise MemoryError("Cannot load from MMIO address")
+            raise MemoryError("Read permission denied")
+
+        if seg == MemorySegment.CODE:
             idx = addr - self.CODE_START
             if 0 <= idx < len(self.code):
                 return self.code[idx]
             raise MemoryError("Code address out of range")
-        if seg == "mmio":
-            if addr == self.MMIO_IN:
-                if self.vm and self.vm.io_in:
-                    return self.vm.io_in.pop(0)
-                return 0
-            raise MemoryError("Cannot load from MMIO address")
-        return self.storage.get(addr, 0)
+
+        if seg == MemorySegment.MMIO_IN:
+            if self.vm and self.vm.io_in:
+                return self.vm.io_in.pop(0)
+            return 0
+
+        return self.segments[seg].get(addr, 0)
 
     def store(self, addr: int, value: int) -> None:
         seg = self._segment(addr)
-        if seg == "code":
-            raise MemoryError("Cannot write to code segment")
-        if seg == "mmio":
-            if addr == self.MMIO_OUT:
-                if self.vm is not None:
-                    self.vm.io_out.append(value)
-                return
-            raise MemoryError("Cannot store to MMIO_IN")
-        self.storage[addr] = value
+        if not self.permissions[seg]["write"]:
+            if seg == MemorySegment.CODE:
+                raise MemoryError("Cannot write to code segment")
+            if seg == MemorySegment.MMIO_IN:
+                raise MemoryError("Cannot store to MMIO_IN")
+            raise MemoryError("Write permission denied")
+
+        if seg == MemorySegment.MMIO_OUT:
+            if self.vm is not None:
+                self.vm.io_out.append(value)
+            return
+
+        self.segments[seg][addr] = value
 
     # ------------------------------------------------------------------
     # Allocation helpers
@@ -148,6 +187,24 @@ class SegmentedMemory:
                 raise MemoryError("Out of memory")
         return addr
 
+    def allocate_heap(self, size: int) -> int:
+        if self.heap_pointer + size > self.STACK_START:
+            raise MemoryError("Out of heap memory")
+        addr = self.heap_pointer
+        for o in range(size):
+            self.segments[MemorySegment.HEAP][addr + o] = 0
+        self.heap_pointer += size
+        return addr
+
+    def allocate_stack(self, size: int) -> int:
+        if self.stack_pointer + size > self.STACK_START + self.STACK_SIZE:
+            raise MemoryError("Out of stack memory")
+        addr = self.stack_pointer
+        for o in range(size):
+            self.segments[MemorySegment.STACK][addr + o] = 0
+        self.stack_pointer += size
+        return addr
+
     def _try_allocate(self, size: int) -> Optional[int]:
         pages_needed = math.ceil(size / self.PAGE_SIZE)
         pages = sorted(self._free_pages)
@@ -159,7 +216,7 @@ class SegmentedMemory:
                 start = self.HEAP_START + run[0] * self.PAGE_SIZE
                 self._allocations[start] = {"pages": run, "size": size, "marked": False}
                 for o in range(size):
-                    self.storage[start + o] = 0
+                    self.segments[MemorySegment.HEAP][start + o] = 0
                 return start
         return None
 
@@ -171,7 +228,7 @@ class SegmentedMemory:
             self._free_pages.add(p)
             base = self.HEAP_START + p * self.PAGE_SIZE
             for o in range(self.PAGE_SIZE):
-                self.storage.pop(base + o, None)
+                self.segments[MemorySegment.HEAP].pop(base + o, None)
 
     # ------------------------------------------------------------------
     # Mark and sweep GC
@@ -181,7 +238,10 @@ class SegmentedMemory:
         if vm is not None:
             roots.extend(v for v in getattr(vm, "stack", []) if isinstance(v, int))
             roots.extend(v for v in getattr(vm, "call_stack", []) if isinstance(v, int))
-        roots.extend(v for v in self.storage.values() if isinstance(v, int))
+        all_vals = []
+        for store in self.segments.values():
+            all_vals.extend(store.values())
+        roots.extend(v for v in all_vals if isinstance(v, int))
         work = [r for r in roots if self.HEAP_START <= r < self.STACK_START]
         marked = set()
         while work:
@@ -195,7 +255,7 @@ class SegmentedMemory:
                 continue
             size = info["size"]  # type: ignore
             for o in range(size):
-                val = self.storage.get(start + o)
+                val = self.segments[MemorySegment.HEAP].get(start + o)
                 if (
                     isinstance(val, int)
                     and self.HEAP_START <= val < self.STACK_START
@@ -212,11 +272,20 @@ class SegmentedMemory:
     # Helpers for checkpointing
     # ------------------------------------------------------------------
     def dump(self) -> Dict[int, int]:
-        return dict(self.storage)
+        data: Dict[int, int] = {}
+        for store in self.segments.values():
+            data.update(store)
+        return data
 
     def load_dump(self, data: Dict[int, int]) -> None:
-        self.storage = dict(data)
+        for seg in self.segments.values():
+            seg.clear()
+        for addr, val in data.items():
+            seg = self._segment(addr)
+            if seg in (MemorySegment.MMIO_IN, MemorySegment.MMIO_OUT, MemorySegment.CODE):
+                continue
+            self.segments[seg][addr] = val
 
     def __len__(self) -> int:
-        return len(self.storage)
+        return sum(len(seg) for seg in self.segments.values())
 
